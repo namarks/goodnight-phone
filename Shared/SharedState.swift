@@ -24,6 +24,7 @@ enum Shared {
         static let hubBoundary = "hubBoundary"
         static let hubLastHeard = "hubLastHeard"
         static let log = "log"
+        static let testBlockUntil = "testBlockUntil"
     }
 
     // MARK: - What to block
@@ -45,6 +46,12 @@ enum Shared {
     static var isBlocking: Bool {
         get { defaults.bool(forKey: Key.isBlocking) }
         set { defaults.set(newValue, forKey: Key.isBlocking) }
+    }
+
+    /// End of a "Try it now" test block (TestBlock), if one was started.
+    static var testBlockUntil: Date? {
+        get { defaults.object(forKey: Key.testBlockUntil) as? Date }
+        set { defaults.set(newValue, forKey: Key.testBlockUntil) }
     }
 
     // MARK: - When to block

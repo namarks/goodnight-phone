@@ -33,7 +33,8 @@ struct ContentView: View {
                         setupDone: setupDone,
                         isBlocking: model.isBlocking,
                         inRoom: model.inRoom,
-                        hours: model.schedule.summary
+                        hours: model.schedule.summary,
+                        testEndsAt: model.testEndsAt
                     )
                 }
                 .listRowInsets(EdgeInsets())
@@ -42,10 +43,12 @@ struct ContentView: View {
                 if broadcaster.isOn { broadcastingSection }
                 if !setupDone { setupSection }
                 appsSection
+                if model.screenTimeApproved && !model.selection.isEmptySelection { tryItSection }
                 hoursSection
                 beaconSection
                 standInSection
                 activitySection
+                aboutSection
             }
             .navigationTitle("Lights Out")
             .familyActivityPicker(isPresented: $showingPicker, selection: $pickerSelection)
@@ -157,6 +160,21 @@ struct ContentView: View {
         }
     }
 
+    private var tryItSection: some View {
+        Section {
+            Button("Block these apps for 2 minutes") { model.startTestBlock() }
+                .disabled(model.isBlocking)
+        } header: {
+            Text("Try it now")
+        } footer: {
+            if let end = model.testEndsAt {
+                Text("Test running. Open a blocked app to see the screen. Everything unlocks at \(end.formatted(date: .omitted, time: .shortened)).")
+            } else {
+                Text("See what blocking looks like without a beacon. Like the real thing, it can't be cancelled early.")
+            }
+        }
+    }
+
     private var hoursSection: some View {
         Section {
             Toggle("Only during bedtime hours", isOn: scheduleBinding(\.limitToHours))
@@ -252,6 +270,16 @@ struct ContentView: View {
         }
     }
 
+    private var aboutSection: some View {
+        Section {
+            Link("Privacy policy", destination: AppLinks.privacyPolicy)
+        } header: {
+            Text("About")
+        } footer: {
+            Text("Everything Lights Out stores stays on this iPhone. In an emergency, turn Lights Out off in Settings → Screen Time → Apps with Screen Time Access to lift every block.")
+        }
+    }
+
     @ViewBuilder private var appsFooter: some View {
         if model.isLocked {
             Text("Locked while you're in the bedroom. Leave the room to make changes.")
@@ -298,6 +326,7 @@ private struct StatusCard: View {
     let isBlocking: Bool
     let inRoom: Bool
     let hours: String
+    let testEndsAt: Date?
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
@@ -319,22 +348,25 @@ private struct StatusCard: View {
     }
 
     private var icon: String {
-        if !setupDone { return "wrench.and.screwdriver.fill" }
         if isBlocking { return "moon.zzz.fill" }
+        if !setupDone { return "wrench.and.screwdriver.fill" }
         if inRoom { return "bed.double.fill" }
         return "sun.max.fill"
     }
 
     private var title: String {
-        if !setupDone { return "Finish setup" }
         if isBlocking { return "Apps blocked" }
+        if !setupDone { return "Finish setup" }
         if inRoom { return "In the bedroom" }
         return "Not in the bedroom"
     }
 
     private var subtitle: String {
-        if !setupDone { return "A few permissions and a beacon, then it runs on its own." }
+        if isBlocking, let testEndsAt {
+            return "Test block. They unlock at \(testEndsAt.formatted(date: .omitted, time: .shortened))."
+        }
         if isBlocking { return "They unlock when you leave the room." }
+        if !setupDone { return "A few permissions and a beacon, then it runs on its own." }
         if inRoom { return "Outside bedtime hours (\(hours)), so nothing's blocked." }
         return hours == "Any time"
             ? "Apps block whenever you walk in."
@@ -342,8 +374,8 @@ private struct StatusCard: View {
     }
 
     private var colors: [Color] {
-        if !setupDone { return [Color(white: 0.35), Color(white: 0.22)] }
         if isBlocking { return [Color(red: 0.13, green: 0.12, blue: 0.36), Color(red: 0.03, green: 0.04, blue: 0.14)] }
+        if !setupDone { return [Color(white: 0.35), Color(white: 0.22)] }
         if inRoom { return [Color(red: 0.33, green: 0.27, blue: 0.62), Color(red: 0.16, green: 0.14, blue: 0.38)] }
         return [Color(red: 0.16, green: 0.52, blue: 0.78), Color(red: 0.10, green: 0.30, blue: 0.55)]
     }

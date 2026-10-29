@@ -18,6 +18,7 @@ final class DeviceActivityMonitorExtension: DeviceActivityMonitor {
         switch activity {
         case .bedtimeStart: return "bedtime started"
         case .bedtimeEnd: return "bedtime ended"
+        case .testBlock: return "test ended"
         default: return "schedule check"
         }
     }

@@ -14,6 +14,7 @@ final class AppModel: ObservableObject {
     @Published private(set) var isBlocking = false
     @Published private(set) var log: [LogEntry] = []
     @Published private(set) var screenTimeApproved = false
+    @Published private(set) var testEndsAt: Date?
 
     private var scheduleTask: Task<Void, Never>?
 
@@ -27,6 +28,7 @@ final class AppModel: ObservableObject {
         isBlocking = Shared.isBlocking
         log = Shared.logEntries.reversed()
         screenTimeApproved = AuthorizationCenter.shared.authorizationStatus == .approved
+        testEndsAt = TestBlock.endsAt
     }
 
     /// Settings are locked while apps are blocked — leaving the room is the only off switch.
@@ -45,6 +47,18 @@ final class AppModel: ObservableObject {
             Shared.log("Screen Time access not granted: \(error.localizedDescription)")
         }
         reload()
+    }
+
+    /// Blocks the chosen apps for a couple of minutes, no beacon needed.
+    func startTestBlock() {
+        TestBlock.start()
+        reload()
+        Task { [weak self] in
+            // Lift it on time while the app is open; the Monitor extension covers it when closed.
+            try? await Task.sleep(for: .seconds(TestBlock.duration + 1))
+            Blocker.refresh(reason: "test ended")
+            self?.reload()
+        }
     }
 
     func saveSelection(_ newValue: FamilyActivitySelection) {

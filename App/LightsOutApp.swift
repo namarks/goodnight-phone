@@ -4,11 +4,15 @@ import UIKit
 @main
 struct LightsOutApp: App {
     @UIApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
+    @AppStorage("didFinishOnboarding") private var didFinishOnboarding = false
 
     var body: some Scene {
         WindowGroup {
             ContentView()
                 .environmentObject(AppModel.shared)
+                .fullScreenCover(isPresented: .constant(!didFinishOnboarding)) {
+                    OnboardingView { didFinishOnboarding = true }
+                }
         }
     }
 }

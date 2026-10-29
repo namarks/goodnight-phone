@@ -9,7 +9,8 @@ extension ManagedSettingsStore.Name {
 
 /// The single source of truth for "should apps be blocked right now?"
 ///
-/// Blocking = in the bedroom AND inside bedtime hours AND something is selected.
+/// Blocking = (in the bedroom AND inside bedtime hours, OR a test block is running)
+/// AND something is selected.
 /// It recomputes from shared state every time, so calling it extra times is harmless.
 /// The app calls it on beacon enter/exit; the DeviceActivity extension calls it when
 /// bedtime hours start and end.
@@ -19,8 +20,8 @@ enum Blocker {
     @discardableResult
     static func refresh(reason: String, now: Date = .now) -> Bool {
         let selection = Shared.selection
-        let shouldBlock = Shared.isInRoom(at: now)
-            && Shared.schedule.contains(now)
+        let testing = (Shared.testBlockUntil ?? .distantPast) > now
+        let shouldBlock = (testing || (Shared.isInRoom(at: now) && Shared.schedule.contains(now)))
             && !selection.isEmptySelection
 
         if shouldBlock {
