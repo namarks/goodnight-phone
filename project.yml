@@ -1,0 +1,133 @@
+# XcodeGen spec — run ./setup.sh rather than editing the generated .xcodeproj.
+# TEAM_ID and BUNDLE_PREFIX come from the environment (setup.sh supplies them).
+name: LightsOut
+
+options:
+  bundleIdPrefix: ${BUNDLE_PREFIX}
+  deploymentTarget:
+    iOS: "17.0"
+  createIntermediateGroups: true
+
+settings:
+  base:
+    DEVELOPMENT_TEAM: ${TEAM_ID}
+    CODE_SIGN_STYLE: Automatic
+    SWIFT_VERSION: "5.0"
+    SWIFT_STRICT_CONCURRENCY: minimal
+    MARKETING_VERSION: "1.0"
+    CURRENT_PROJECT_VERSION: "1"
+    TARGETED_DEVICE_FAMILY: "1"
+    SUPPORTS_MACCATALYST: "NO"
+    SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD: "NO"
+
+targets:
+  # The app: settings UI + beacon monitoring (CLMonitor).
+  LightsOut:
+    type: application
+    platform: iOS
+    sources:
+      - path: App
+      - path: Shared
+    scheme: {}
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: ${BUNDLE_PREFIX}.lightsout
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
+    info:
+      path: Support/App-Info.plist
+      properties:
+        CFBundleDisplayName: Lights Out
+        CFBundleShortVersionString: $(MARKETING_VERSION)
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
+        LightsOutAppGroup: group.${BUNDLE_PREFIX}.lightsout
+        UILaunchScreen: {}
+        UIApplicationSceneManifest:
+          UIApplicationSupportsMultipleScenes: false
+        UISupportedInterfaceOrientations:
+          - UIInterfaceOrientationPortrait
+        NSLocationWhenInUseUsageDescription: "Lights Out uses your bedroom beacon to tell when you’re in the bedroom."
+        NSLocationAlwaysAndWhenInUseUsageDescription: "Choose “Always” so iOS can wake Lights Out to block apps the moment you walk into the bedroom, even when the app is closed."
+    entitlements:
+      path: Support/LightsOut.entitlements
+      properties:
+        com.apple.developer.family-controls: true
+        com.apple.security.application-groups:
+          - group.${BUNDLE_PREFIX}.lightsout
+    dependencies:
+      - target: LightsOutMonitor
+      - target: LightsOutShield
+      - target: LightsOutShieldAction
+
+  # Woken at the start/end of bedtime hours to apply or lift the shield.
+  LightsOutMonitor:
+    type: app-extension
+    platform: iOS
+    sources:
+      - path: Extensions/Monitor
+      - path: Shared
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: ${BUNDLE_PREFIX}.lightsout.monitor
+    info:
+      path: Support/Monitor-Info.plist
+      properties:
+        CFBundleDisplayName: Lights Out Monitor
+        CFBundleShortVersionString: $(MARKETING_VERSION)
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
+        LightsOutAppGroup: group.${BUNDLE_PREFIX}.lightsout
+        NSExtension:
+          NSExtensionPointIdentifier: com.apple.deviceactivity.monitor-extension
+          NSExtensionPrincipalClass: $(PRODUCT_MODULE_NAME).DeviceActivityMonitorExtension
+    entitlements:
+      path: Support/Monitor.entitlements
+      properties:
+        com.apple.developer.family-controls: true
+        com.apple.security.application-groups:
+          - group.${BUNDLE_PREFIX}.lightsout
+
+  # The custom "Not in the bedroom" screen over blocked apps.
+  LightsOutShield:
+    type: app-extension
+    platform: iOS
+    sources:
+      - path: Extensions/Shield
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: ${BUNDLE_PREFIX}.lightsout.shield
+    info:
+      path: Support/Shield-Info.plist
+      properties:
+        CFBundleDisplayName: Lights Out Shield
+        CFBundleShortVersionString: $(MARKETING_VERSION)
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
+        NSExtension:
+          NSExtensionPointIdentifier: com.apple.ManagedSettingsUI.shield-configuration-service
+          NSExtensionPrincipalClass: $(PRODUCT_MODULE_NAME).ShieldConfigurationExtension
+    entitlements:
+      path: Support/Shield.entitlements
+      properties:
+        com.apple.developer.family-controls: true
+
+  # Handles the shield's Close button.
+  LightsOutShieldAction:
+    type: app-extension
+    platform: iOS
+    sources:
+      - path: Extensions/ShieldAction
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: ${BUNDLE_PREFIX}.lightsout.shieldaction
+    info:
+      path: Support/ShieldAction-Info.plist
+      properties:
+        CFBundleDisplayName: Lights Out Shield Action
+        CFBundleShortVersionString: $(MARKETING_VERSION)
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
+        NSExtension:
+          NSExtensionPointIdentifier: com.apple.ManagedSettings.shield-action-service
+          NSExtensionPrincipalClass: $(PRODUCT_MODULE_NAME).ShieldActionExtension
+    entitlements:
+      path: Support/ShieldAction.entitlements
+      properties:
+        com.apple.developer.family-controls: true
