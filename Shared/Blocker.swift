@@ -21,7 +21,7 @@ enum Blocker {
     static func refresh(reason: String, now: Date = .now) -> Bool {
         let selection = Shared.selection
         let testing = (Shared.testBlockUntil ?? .distantPast) > now
-        let shouldBlock = (testing || (Shared.inRoom && Shared.schedule.contains(now)))
+        let shouldBlock = (testing || (Shared.isInRoom(at: now) && Shared.schedule.contains(now)))
             && !selection.isEmptySelection
 
         if shouldBlock {

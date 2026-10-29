@@ -54,12 +54,13 @@ final class RoomMonitor {
         eventsTask = nil
     }
 
-    /// Makes the monitor watch exactly the beacon saved in settings.
+    /// Makes the monitor watch exactly the beacon saved in settings. The stand-in device isn't
+    /// an iBeacon (HubMonitor watches it over a connection), so it gets no condition here.
     func syncCondition() async {
         guard let monitor else { return }
-        let config = Shared.beacon
+        let config = Shared.beacon.flatMap { $0.isStandIn ? nil : $0 }
         let alreadyWatching = await monitor.hasCondition(Self.conditionID)
-        if alreadyWatching, config == Shared.monitoredBeacon { return }
+        if alreadyWatching == (config != nil), config == Shared.monitoredBeacon { return }
 
         await monitor.remove(Self.conditionID)
         Shared.monitoredBeacon = nil
@@ -80,6 +81,8 @@ final class RoomMonitor {
     }
 
     private func apply(_ state: CLMonitor.Event.State) {
+        // Events for the old iBeacon condition can still arrive after switching to the stand-in.
+        guard Shared.beacon?.isStandIn != true else { return }
         switch state {
         case .satisfied: setInRoom(true)
         case .unsatisfied: setInRoom(false)
@@ -87,8 +90,9 @@ final class RoomMonitor {
         }
     }
 
+    /// The one place that writes `Shared.inRoom`; HubMonitor reports through it too.
     /// `reason` is only passed for non-beacon changes (e.g. switching beacons).
-    private func setInRoom(_ inRoom: Bool, reason: String? = nil) {
+    func setInRoom(_ inRoom: Bool, reason: String? = nil) {
         if Shared.inRoom != inRoom, reason == nil {
             Shared.log(inRoom ? "Entered bedroom" : "Left bedroom")
         }

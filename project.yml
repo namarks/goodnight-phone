@@ -28,7 +28,9 @@ targets:
     sources:
       - path: App
       - path: Shared
-    scheme: {}
+    scheme:
+      testTargets:
+        - LightsOutTests
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: ${BUNDLE_PREFIX}.lightsout
@@ -50,7 +52,10 @@ targets:
           - UIInterfaceOrientationPortrait
         NSLocationWhenInUseUsageDescription: "Lights Out checks whether your iPhone is near your bedroom beacon so it can block the apps you chose at bedtime. Your location never leaves your phone."
         NSLocationAlwaysAndWhenInUseUsageDescription: "Choose “Always” so iOS can wake Lights Out when you walk into the bedroom and block your chosen apps, even when the app is closed. Lights Out only learns whether you’re near your beacon, and nothing leaves your phone."
-        NSBluetoothAlwaysUsageDescription: "Lights Out uses Bluetooth to broadcast as a stand-in bedroom beacon from a spare iPad or iPhone."
+        NSBluetoothAlwaysUsageDescription: "Lights Out uses Bluetooth to connect your phone to a spare iPad or iPhone standing in as the bedroom beacon, and to tell how close you are to it."
+        # Keeps the connection to the spare-device stand-in alive with the app closed (HubMonitor).
+        UIBackgroundModes:
+          - bluetooth-central
     entitlements:
       path: Support/LightsOut.entitlements
       properties:
@@ -61,6 +66,19 @@ targets:
       - target: LightsOutMonitor
       - target: LightsOutShield
       - target: LightsOutShieldAction
+
+  # Unit tests for the pure room-presence logic. Compiles App/Presence directly instead of
+  # hosting the app, so tests don't launch it (Screen Time and Bluetooth don't work in the Simulator).
+  LightsOutTests:
+    type: bundle.unit-test
+    platform: iOS
+    sources:
+      - path: Tests
+      - path: App/Presence
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: ${BUNDLE_PREFIX}.lightsout.tests
+        GENERATE_INFOPLIST_FILE: YES
 
   # Woken at the start/end of bedtime hours to apply or lift the shield.
   LightsOutMonitor:

@@ -22,9 +22,11 @@ final class AppDelegate: NSObject, UIApplicationDelegate {
         _ application: UIApplication,
         didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil
     ) -> Bool {
-        // iOS relaunches the app in the background to deliver beacon enter/exit events.
-        // The monitor has to be recreated on every launch for those events to arrive.
+        // iOS relaunches the app in the background to deliver beacon enter/exit events and
+        // (for the spare-device stand-in) Bluetooth events. Both monitors have to be recreated
+        // on every launch for those events to arrive.
         RoomMonitor.shared.start()
+        HubMonitor.shared.sync()
         return true
     }
 }

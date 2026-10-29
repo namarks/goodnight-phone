@@ -21,6 +21,8 @@ enum Shared {
         static let syncedSchedule = "syncedSchedule"
         static let beacon = "beacon"
         static let monitoredBeacon = "monitoredBeacon"
+        static let hubBoundary = "hubBoundary"
+        static let hubLastHeard = "hubLastHeard"
         static let log = "log"
         static let testBlockUntil = "testBlockUntil"
     }
@@ -78,6 +80,31 @@ enum Shared {
         set { encode(newValue, Key.monitoredBeacon) }
     }
 
+    /// With the spare-device stand-in: signal strength (dBm) measured at the bedroom door.
+    /// Stronger than this counts as in the bedroom.
+    static var hubBoundary: Int? {
+        get { defaults.object(forKey: Key.hubBoundary) as? Int }
+        set { defaults.set(newValue, forKey: Key.hubBoundary) }
+    }
+
+    /// With the stand-in: when the phone last checked the signal against the boundary.
+    static var hubLastHeard: Date? {
+        get { (defaults.object(forKey: Key.hubLastHeard) as? Double).map(Date.init(timeIntervalSince1970:)) }
+        set { defaults.set(newValue?.timeIntervalSince1970, forKey: Key.hubLastHeard) }
+    }
+
+    /// A stand-in "in the bedroom" older than this isn't trusted: the app may have been
+    /// force-quit or not relaunched after a restart, so nothing would ever clear it.
+    static let hubFreshness: TimeInterval = 60
+
+    /// `inRoom`, unless it came from the stand-in and hasn't been confirmed recently.
+    static func isInRoom(at now: Date = .now) -> Bool {
+        guard inRoom else { return false }
+        guard beacon?.isStandIn == true else { return true }
+        guard let hubLastHeard else { return false }
+        return now.timeIntervalSince(hubLastHeard) < hubFreshness
+    }
+
     // MARK: - Activity log (shown in the app; handy for tuning the beacon)
 
     static var logEntries: [LogEntry] {
@@ -128,6 +155,14 @@ struct BeaconConfig: Codable, Equatable {
         if let minor { text += " minor \(minor)" }
         return text
     }
+
+    /// Identifies the spare-device stand-in. Same in every copy of the app, so choosing "Use a
+    /// spare iPad or iPhone" needs no typing.
+    static let standInUUID = UUID(uuidString: "E6B2E125-B543-4BA4-8D19-B68DBA9F147C")!
+    static let standIn = BeaconConfig(uuid: standInUUID.uuidString)
+
+    /// The stand-in is watched over a Bluetooth connection (HubMonitor), not as an iBeacon.
+    var isStandIn: Bool { uuid == Self.standIn.uuid }
 }
 
 extension FamilyActivitySelection {
