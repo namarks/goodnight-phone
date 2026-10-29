@@ -27,24 +27,22 @@ final class HubMonitor: NSObject, ObservableObject, CBCentralManagerDelegate, CB
     /// Signal strength in dBm (median of the last few readings).
     @Published private(set) var rssi: Int?
     /// Signal strength at the bedroom door. Nothing counts as in the room until it's set.
-    @Published private(set) var boundary = Shared.hubBoundary
+    @Published private(set) var boundary = Shared.hubBoundary {
+        didSet { presence.thresholds = boundary.map(RoomCalibration.thresholds(boundary:)) }
+    }
     @Published private(set) var isCalibrating = false
 
-    /// The median has to clear the boundary by this much to switch, so standing near the door
-    /// (or shifting the phone in your hand) doesn't flip back and forth.
-    static let margin = 3
-    private static let window = 5
-    private static let minimumSamples = 3
-    /// Readings older than this (e.g. from before bedtime hours) aren't mixed with new ones.
-    private static let staleAfter: TimeInterval = 10
-    private static let calibrationSamples = 5
     private static let restoreID = "LightsOutHub"
 
     private var central: CBCentralManager?
     private var hub: CBPeripheral?
     private var scheduleCharacteristic: CBCharacteristic?
-    private var samples: [Int] = []
-    private var lastSampleAt: Date?
+    /// Median smoothing, separate enter/leave thresholds and dwell times, so the signal's
+    /// 5–10 dB jumps can't flip you in and out of the room.
+    private var presence = RoomPresenceStateMachine(
+        inRoom: Shared.inRoom,
+        thresholds: Shared.hubBoundary.map(RoomCalibration.thresholds(boundary:))
+    )
     private var calibration: [Int] = []
     private var pollTimer: Timer?
 
@@ -194,8 +192,7 @@ final class HubMonitor: NSObject, ObservableObject, CBCentralManagerDelegate, CB
     private func forgetReadings() {
         isListening = false
         scheduleCharacteristic = nil
-        samples = []
-        lastSampleAt = nil
+        presence.forgetReadings()
         rssi = nil
         isCalibrating = false
     }
@@ -208,57 +205,54 @@ final class HubMonitor: NSObject, ObservableObject, CBCentralManagerDelegate, CB
 
     /// Bedtime hours ended (or the app closed outside them): readings stop until bedtime.
     private func pause() {
-        samples = []
-        lastSampleAt = nil
+        presence.forgetReadings()
         goOutside(reason: "outside bedtime hours")
     }
 
     private func poll() {
         guard isListening, let hub else { return }
+        presence.sync(inRoom: Shared.inRoom)
+        if presence.tick(at: .now) == .left { RoomMonitor.shared.setInRoom(false) }
         hub.readRSSI()
     }
 
     private func record(_ value: Int) {
-        guard value < 0 else { return }   // 127 means iOS couldn't measure it this time
-        if let lastSampleAt, Date.now.timeIntervalSince(lastSampleAt) > Self.staleAfter { samples = [] }
-        lastSampleAt = .now
-        samples.append(value)
-        if samples.count > Self.window { samples.removeFirst(samples.count - Self.window) }
-        let median = samples.sorted()[samples.count / 2]
-        rssi = median
+        guard RoomPresenceStateMachine.isValid(value) else { return }   // 127 means iOS couldn't measure it
+        if Shared.inRoom, !Shared.isInRoom() {
+            // Not confirmed for a while (force-quit, restart, a long gap), and Blocker already
+            // ignores it: start again from outside and let the readings re-enter.
+            RoomMonitor.shared.setInRoom(false, reason: "no recent reading")
+        }
+        presence.sync(inRoom: Shared.inRoom)   // other events (Bluetooth off, settings) may have changed it
+        let transition = presence.add(rssi: value, at: .now)
+        rssi = presence.smoothedRSSI
 
         if isCalibrating {
             calibration.append(value)
-            if calibration.count >= Self.calibrationSamples { finishCalibration() }
+            if calibration.count >= RoomCalibration.sampleCount { finishCalibration() }
         }
-        guard let boundary else {
+        guard boundary != nil else {
             goOutside(reason: "no bedroom boundary set")
             return
         }
-        guard isListening, samples.count >= Self.minimumSamples else { return }
-        // Blocker ignores a stand-in "in the bedroom" that hasn't been confirmed recently
-        // (Shared.isInRoom), so re-apply the shield when a stale one is confirmed again.
-        let wasStale = !Shared.isInRoom() && Shared.inRoom
-        Shared.hubLastHeard = .now
-        if Shared.inRoom {
-            if median < boundary - Self.margin {
-                RoomMonitor.shared.setInRoom(false)
-            } else if wasStale {
-                Blocker.refresh(reason: "in the bedroom")
-                AppModel.shared.reload()
-            }
-        } else if median >= boundary + Self.margin {
-            RoomMonitor.shared.setInRoom(true)
+        guard isListening else { return }
+        Shared.hubLastHeard = .now   // keeps the current in/out state trusted (Shared.isInRoom)
+        switch transition {
+        case .entered: RoomMonitor.shared.setInRoom(true)
+        case .left: RoomMonitor.shared.setInRoom(false)
+        case nil: break
         }
     }
 
     private func finishCalibration() {
-        let value = calibration.sorted()[calibration.count / 2]
+        let value = RoomCalibration.boundary(doorSamples: calibration)
         calibration = []
         isCalibrating = false
+        guard let value else { return }
+        let thresholds = RoomCalibration.thresholds(boundary: value)
         Shared.hubBoundary = value
         boundary = value
-        Shared.log("Bedroom boundary set at \(value) dBm")
+        Shared.log("Bedroom boundary set at \(value) dBm (in at \(thresholds.enter), out at \(thresholds.leave))")
         AppModel.shared.reload()
     }
 

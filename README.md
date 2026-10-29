@@ -28,6 +28,16 @@ Bluetooth goes through walls, so out of the box the zone may reach the hallway.
 3. Walk out of the room and wait about 30 seconds. iOS waits a bit before deciding you've left. The app's Activity list should show "Left bedroom".
 4. If it doesn't, lower the power one more step and try again. While Lights Out is open, the **Signal** row under Bedroom beacon shows live signal strength (RSSI) and a rough distance, so you can watch it drop as you walk to the door.
 
+## Battery
+
+**With a real beacon, Lights Out costs almost nothing.** It uses iOS region monitoring (`CLMonitor`): you hand iOS the beacon's UUID, and the phone's Bluetooth chip listens for it in hardware alongside everything else it's already doing. Lights Out isn't running and isn't scanning. iOS wakes it only when you cross into or out of range, a few times a night, for a fraction of a second each. So yes, the phone effectively only "looks" when it's near the beacon.
+
+The one exception is the live **Signal** row: while Lights Out is open on screen it ranges the beacon about once a second, and that stops the moment you leave the app. It's display only, and never runs in the background.
+
+**With a spare iPad or iPhone (hub mode), it costs more, but only at night.** iOS can't watch a signal-strength boundary in hardware, so your phone stays connected to the spare device and checks the signal on each heartbeat. Your phone tells the spare device your bedtime hours, and it only sends heartbeats during them, every 2 seconds. Outside bedtime the connection stays open but silent, which costs about the same as being paired with AirPods you aren't using. It's a modest cost, and it falls when the phone is usually on its charger. A real beacon removes even that. If bedtime hours are off ("Any time"), the heartbeat runs all day. (While Lights Out is open on screen it also reads the signal every second, for the Signal row and setting the boundary.)
+
+Why the spare device decides when to talk, not your phone: iOS gives a closed app no reliable way to wake itself at 9 PM, so the heartbeat has to start from the spare device's side.
+
 ## How it works
 
 ```
@@ -48,7 +58,7 @@ Bedtime starts/ends ──► DeviceActivity wakes the Monitor extension ──�
 | `App/ContentView.swift` | Status card, setup checklist, apps, hours, beacon, activity log. |
 | `App/HubMonitor.swift` | With a spare iPad or iPhone as the beacon: stays connected to it over Bluetooth (also with the app closed), reads the signal on each heartbeat, and decides in or out against the boundary you set at the bedroom door. |
 | `App/BeaconSignal.swift` | The live Signal row for a real iBeacon: ranges the beacon while the app is open. Display only; blocking follows `RoomMonitor`. |
-| `App/BeaconBroadcaster.swift` | The spare device's side: offers the Bluetooth connection and sends each phone a heartbeat every 2 seconds during that phone's bedtime hours. |
+| `App/BeaconBroadcaster.swift` | The spare device's side: offers the Bluetooth connection, keeps each phone's bedtime hours, and sends a heartbeat every 2 seconds only during them. |
 | `Extensions/Monitor` | `DeviceActivityMonitor` that calls `Blocker` at bedtime boundaries. |
 | `Extensions/Shield` | The custom "Not in the bedroom" screen. |
 | `Extensions/ShieldAction` | The shield's only button, Close. There's no "unlock anyway". |
@@ -72,9 +82,9 @@ A spare iPad or iPhone can be the beacon. This works like Brick Night: your phon
 3. On your iPhone, tap **Add beacon…** (or **Change beacon…**), then **Use a spare iPad or iPhone**, then **Save**, and allow Bluetooth.
 4. Once it says **Connected**, stand in the bedroom doorway (not next to the spare device) and tap **Set** on **Bedroom boundary** (or **Set boundary here** under Bedroom beacon). It measures for about five seconds. Nothing is blocked until this is set.
 
-Anywhere the signal is stronger than the boundary counts as the bedroom; weaker counts as outside. During bedtime hours, changes register within about 6 seconds, with the app open or closed. Like the other settings, the boundary is locked while apps are blocked, so to move it inward, do it outside bedtime hours.
+Anywhere the signal is stronger than the boundary counts as the bedroom; weaker counts as outside. During bedtime hours, walking in registers within about 10 seconds and leaving within about 30, with the app open or closed; leaving is slower so a weak moment by the bed doesn't lift the block. Like the other settings, the boundary is locked while apps are blocked, so to move it inward, do it outside bedtime hours.
 
-**Battery:** during bedtime hours the spare device sends your phone a heartbeat every 2 seconds, and each one briefly wakes Lights Out to check the signal. Your phone tells the spare device your hours, and it stays quiet outside them. That's more than a real iBeacon costs (iOS watches for those in hardware and only wakes the app when you cross into or out of range), but it's limited to bedtime hours, when your phone is usually charging. If bedtime hours are off ("Any time"), the heartbeat runs all day.
+For battery use, see [Battery](#battery).
 
 **Limits:** whenever your phone can't hear the spare device (out of range, its Lights Out closed or locked, or Bluetooth off on either one), you count as outside. Like the escape hatch below, that isn't airtight. Force-quitting Lights Out on your phone stops detection, and blocking, until you open it again: an "in the bedroom" that hasn't been confirmed in the last minute is ignored, so you're never blocked somewhere else on stale information.
 
