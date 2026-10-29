@@ -205,7 +205,7 @@ struct ContentView: View {
             Text("Bedroom beacon")
         } footer: {
             Text(usesStandIn
-                 ? "Stronger than the boundary counts as in the bedroom. Set it standing in the bedroom doorway, not next to the spare device; anywhere weaker, like the kitchen, counts as outside. During bedtime hours, changes register within about 6 seconds, even with the app closed."
+                 ? "Stronger than the boundary counts as in the bedroom. Set it standing in the bedroom doorway, not next to the spare device; anywhere weaker, like the kitchen, counts as outside. During bedtime hours, walking in registers within about 10 seconds and leaving within about 30, even with the app closed, so a weak moment by the bed doesn't lift the block."
                  : "Signal is live while the app is open. Blocking follows Status, and iOS takes about 30 seconds to register that you've left. If it still says “In the bedroom” after you step out of the room, turn the beacon's transmit power down.")
         }
     }

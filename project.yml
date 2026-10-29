@@ -28,7 +28,9 @@ targets:
     sources:
       - path: App
       - path: Shared
-    scheme: {}
+    scheme:
+      testTargets:
+        - LightsOutTests
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: ${BUNDLE_PREFIX}.lightsout
@@ -62,6 +64,19 @@ targets:
       - target: LightsOutMonitor
       - target: LightsOutShield
       - target: LightsOutShieldAction
+
+  # Unit tests for the pure room-presence logic. Compiles App/Presence directly instead of
+  # hosting the app, so tests don't launch it (Screen Time and Bluetooth don't work in the Simulator).
+  LightsOutTests:
+    type: bundle.unit-test
+    platform: iOS
+    sources:
+      - path: Tests
+      - path: App/Presence
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: ${BUNDLE_PREFIX}.lightsout.tests
+        GENERATE_INFOPLIST_FILE: YES
 
   # Woken at the start/end of bedtime hours to apply or lift the shield.
   LightsOutMonitor:
