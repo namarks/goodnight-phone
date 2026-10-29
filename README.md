@@ -26,7 +26,7 @@ Bluetooth goes through walls, so out of the box the zone may reach the hallway.
 1. Put the beacon on the far side of the nightstand, away from the door.
 2. In the vendor's app, lower **transmit power** (try about −12 dBm or lower) and set the advertising interval to around 500 ms.
 3. Walk out of the room and wait about 30 seconds. iOS waits a bit before deciding you've left. The app's Activity list should show "Left bedroom".
-4. If it doesn't, lower the power one more step and try again. The free **nRF Connect** app shows live signal strength (RSSI) if you'd rather measure.
+4. If it doesn't, lower the power one more step and try again. While Lights Out is open, the **Signal** row under Bedroom beacon shows live signal strength (RSSI) and a rough distance, so you can watch it drop as you walk to the door.
 
 ## How it works
 
@@ -45,6 +45,7 @@ Bedtime starts/ends ──► DeviceActivity wakes the Monitor extension ──�
 | `Shared/BedtimeActivities.swift` | Registers short DeviceActivity windows at the start and end of bedtime to wake the extension. iOS delivers these while the phone is in use, so if it's asleep on the nightstand at 9 PM, blocking turns on the next time you pick it up. |
 | `App/RoomMonitor.swift` | Watches the beacon with `CLMonitor`, and on iOS 18+ holds a `CLServiceSession` once "Always" is granted. It's started on every launch, which is how iOS delivers enter/exit events in the background. |
 | `App/ContentView.swift` | Status card, setup checklist, apps, hours, beacon, activity log. |
+| `App/BeaconSignal.swift` | The live Signal row: ranges the beacon while the app is open. Display only; blocking follows `RoomMonitor`. |
 | `App/BeaconBroadcaster.swift` | Stand-in mode: broadcasts a fixed iBeacon UUID from a spare iPad or iPhone. |
 | `Extensions/Monitor` | `DeviceActivityMonitor` that calls `Blocker` at bedtime boundaries. |
 | `Extensions/Shield` | The custom "Not in the bedroom" screen. |
@@ -65,7 +66,7 @@ Plug their iPhone into the Mac once so Xcode registers it with your team, then p
 A spare iPad or iPhone can stand in while you test:
 
 1. Install Lights Out on the spare device the same way (plug it in, pick it as the run destination, ⌘R). It doesn't need the setup checklist.
-2. On the spare device, open **No beacon yet? → Broadcast as bedroom beacon**, turn it on and allow Bluetooth. Leave it on that screen, plugged in, by the bed. iOS only broadcasts while the app is on screen, so the display stays on.
+2. On the spare device, open **No beacon yet? → Broadcast as bedroom beacon**, turn it on and allow Bluetooth. Leave Lights Out open (any screen), plugged in, by the bed. iOS only broadcasts while the app is on screen, so the display stays on.
 3. On your iPhone, tap **Add beacon…** (or **Change beacon…**), then **Use a spare iPad or iPhone**, then **Save**.
 
 A phone or iPad can't turn its signal down like a real beacon, so the "bedroom" may reach past the door. Use it to check that blocking works, then switch to a real beacon.

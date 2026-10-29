@@ -5,6 +5,8 @@ import SwiftUI
 struct ContentView: View {
     @EnvironmentObject private var model: AppModel
     @StateObject private var location = LocationPermission()
+    @StateObject private var signal = BeaconSignal()
+    @ObservedObject private var broadcaster = BeaconBroadcaster.shared
     @Environment(\.scenePhase) private var scenePhase
 
     @State private var showingPicker = false
@@ -33,6 +35,7 @@ struct ContentView: View {
                 .listRowInsets(EdgeInsets())
                 .listRowBackground(Color.clear)
 
+                if broadcaster.isOn { broadcastingSection }
                 if !setupDone { setupSection }
                 appsSection
                 hoursSection
@@ -48,10 +51,17 @@ struct ContentView: View {
             .sheet(isPresented: $editingBeacon) {
                 BeaconEditor(current: model.beacon) { model.saveBeacon($0) }
             }
-            .task { await model.refreshEverything() }
+            .task {
+                signal.watch(model.beacon)
+                await model.refreshEverything()
+            }
+            .onChange(of: model.beacon) { _, beacon in signal.watch(beacon) }
             .onChange(of: scenePhase) { _, phase in
+                if phase == .background { signal.stop() }
                 guard phase == .active else { return }
                 location.refresh()
+                signal.watch(model.beacon)
+                broadcaster.resume()
                 Task { await model.refreshEverything() }
             }
             .onReceive(ticker) { _ in model.reload() }
@@ -142,19 +152,41 @@ struct ContentView: View {
             if let beacon = model.beacon {
                 LabeledContent("Beacon", value: beacon.shortDescription)
                 LabeledContent("Status", value: model.inRoom ? "In range" : "Out of range")
+                LabeledContent("Signal") {
+                    HStack(spacing: 6) {
+                        Text(signal.label)
+                        Image(systemName: "cellularbars", variableValue: signal.strength)
+                    }
+                }
             }
             Button(model.beacon == nil ? "Add beacon…" : "Change beacon…") { editingBeacon = true }
                 .disabled(model.isLocked)
         } header: {
             Text("Bedroom beacon")
         } footer: {
-            Text("Leaving takes about 30 seconds to register. If it still says “In range” after you step out of the room, turn the beacon's transmit power down.")
+            Text("Signal is live while the app is open. Blocking follows Status, and iOS takes about 30 seconds to register that you've left. If it still says “In range” after you step out of the room, turn the beacon's transmit power down.")
+        }
+    }
+
+    /// Shown at the top while this device is the stand-in beacon. Kept separate from
+    /// standInSection so the NavigationLink never moves (moving it would pop its screen).
+    private var broadcastingSection: some View {
+        Section {
+            LabeledContent {
+                Text(broadcaster.label)
+            } label: {
+                Label("Stand-in beacon", systemImage: "dot.radiowaves.left.and.right")
+            }
+        } footer: {
+            Text("This device is standing in for the bedroom beacon. Keep Lights Out open, plugged in, by the bed.")
         }
     }
 
     private var standInSection: some View {
         Section {
-            NavigationLink("Broadcast as bedroom beacon") { StandInBeaconView() }
+            NavigationLink { StandInBeaconView() } label: {
+                LabeledContent("Broadcast as bedroom beacon", value: broadcaster.label)
+            }
         } header: {
             Text("No beacon yet?")
         } footer: {
@@ -404,8 +436,7 @@ private struct BeaconEditor: View {
 // MARK: - Stand-in beacon
 
 private struct StandInBeaconView: View {
-    @StateObject private var broadcaster = BeaconBroadcaster()
-    @Environment(\.scenePhase) private var scenePhase
+    @ObservedObject private var broadcaster = BeaconBroadcaster.shared
 
     var body: some View {
         Form {
@@ -414,9 +445,9 @@ private struct StandInBeaconView: View {
                     get: { broadcaster.isOn },
                     set: { broadcaster.setOn($0) }
                 ))
-                LabeledContent("Status", value: statusText)
+                LabeledContent("Status", value: broadcaster.label)
             } footer: {
-                Text("Leave this screen open with the device plugged in by the bed. iOS only broadcasts while Lights Out is on screen, so the display stays on while this is on.")
+                Text("Leave Lights Out open with the device plugged in by the bed. iOS only broadcasts while the app is on screen, so the display stays on while this is on.")
             }
 
             Section {
@@ -431,21 +462,5 @@ private struct StandInBeaconView: View {
         }
         .navigationTitle("Stand-in beacon")
         .navigationBarTitleDisplayMode(.inline)
-        .onChange(of: scenePhase) { _, phase in
-            if phase == .active { broadcaster.resume() }
-        }
-        .onDisappear { broadcaster.stop() }
-    }
-
-    private var statusText: String {
-        switch broadcaster.status {
-        case .off: return "Off"
-        case .starting: return "Starting…"
-        case .broadcasting: return "Broadcasting"
-        case .bluetoothOff: return "Turn on Bluetooth"
-        case .notAllowed: return "Bluetooth off for Lights Out — open Settings"
-        case .unsupported: return "Not supported on this device"
-        case .failed(let message): return message
-        }
     }
 }

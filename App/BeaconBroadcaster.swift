@@ -3,10 +3,13 @@ import CoreLocation
 import UIKit
 
 /// Lets a spare iPad or iPhone running Lights Out stand in for the bedroom beacon until a
-/// real one arrives. iOS only broadcasts iBeacon data while the app is on screen, so the
+/// real one arrives. One instance lives for the whole app session, so the broadcast keeps
+/// going on any screen. iOS only broadcasts iBeacon data while the app is on screen, so the
 /// display is kept awake while broadcasting.
 @MainActor
 final class BeaconBroadcaster: NSObject, ObservableObject, CBPeripheralManagerDelegate {
+    static let shared = BeaconBroadcaster()
+
     enum Status: Equatable {
         case off, starting, broadcasting, bluetoothOff, notAllowed, unsupported
         case failed(String)
@@ -16,6 +19,20 @@ final class BeaconBroadcaster: NSObject, ObservableObject, CBPeripheralManagerDe
     @Published private(set) var status = Status.off
 
     private var manager: CBPeripheralManager?
+
+    private override init() { super.init() }
+
+    var label: String {
+        switch status {
+        case .off: return "Off"
+        case .starting: return "Starting…"
+        case .broadcasting: return "Broadcasting"
+        case .bluetoothOff: return "Turn on Bluetooth"
+        case .notAllowed: return "Bluetooth off for Lights Out — open Settings"
+        case .unsupported: return "Not supported on this device"
+        case .failed(let message): return message
+        }
+    }
 
     func setOn(_ on: Bool) {
         on ? start() : stop()
