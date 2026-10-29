@@ -81,6 +81,8 @@ final class RoomMonitor {
     }
 
     private func apply(_ state: CLMonitor.Event.State) {
+        // Events for the old iBeacon condition can still arrive after switching to the stand-in.
+        guard Shared.beacon?.isStandIn != true else { return }
         switch state {
         case .satisfied: setInRoom(true)
         case .unsatisfied: setInRoom(false)

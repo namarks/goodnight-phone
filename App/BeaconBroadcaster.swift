@@ -17,7 +17,7 @@ final class BeaconBroadcaster: NSObject, ObservableObject, CBPeripheralManagerDe
     /// The stand-in's Bluetooth service. Same in every copy of the app, so the phone can find it.
     static let serviceUUID = CBUUID(nsuuid: BeaconConfig.standInUUID)
     static let heartbeatUUID = CBUUID(string: "17FEA0BC-C577-41FE-B8A1-9604CDE1C469")
-    /// Phones write their BedtimeSchedule (JSON) here.
+    /// Phones write their PhoneHours (JSON) here.
     static let scheduleUUID = CBUUID(string: "8C4D4E0A-2F5B-4B8E-9C1D-3A6F7E2B5D90")
     /// Heartbeat values: a beat means "read my signal now"; pause means bedtime hours just ended.
     static let beatValue = Data([1])
@@ -40,7 +40,7 @@ final class BeaconBroadcaster: NSObject, ObservableObject, CBPeripheralManagerDe
     private var heartbeat: CBMutableCharacteristic?
     private var timer: Timer?
     private var subscribers: [UUID: CBCentral] = [:]
-    private var schedules: [UUID: BedtimeSchedule] = [:]
+    private var schedules: [UUID: PhoneHours] = [:]
     /// Whether each phone was last sent a beat (true) or a pause (false).
     private var wasAwake: [UUID: Bool] = [:]
 
@@ -205,9 +205,11 @@ final class BeaconBroadcaster: NSObject, ObservableObject, CBPeripheralManagerDe
             guard isOn else { return }
             status = message.map(Status.failed) ?? .broadcasting
             if message == nil, timer == nil {
-                timer = Timer.scheduledTimer(withTimeInterval: Self.interval, repeats: true) { [weak self] _ in
+                let timer = Timer(timeInterval: Self.interval, repeats: true) { [weak self] _ in
                     MainActor.assumeIsolated { self?.beat() }
                 }
+                RunLoop.main.add(timer, forMode: .common)   // keeps beating while the screen scrolls
+                self.timer = timer
             }
         }
     }
@@ -243,8 +245,8 @@ final class BeaconBroadcaster: NSObject, ObservableObject, CBPeripheralManagerDe
                 .filter { $0.characteristic.uuid == Self.scheduleUUID }
                 .sorted { $0.offset < $1.offset }
                 .reduce(into: Data()) { $0.append($1.value ?? Data()) }
-            if let schedule = try? JSONDecoder().decode(BedtimeSchedule.self, from: data) {
-                schedules[first.central.identifier] = schedule
+            if let hours = try? JSONDecoder().decode(PhoneHours.self, from: data) {
+                schedules[first.central.identifier] = hours
                 peripheral.respond(to: first, withResult: .success)
             } else {
                 peripheral.respond(to: first, withResult: .unlikelyError)
@@ -253,14 +255,19 @@ final class BeaconBroadcaster: NSObject, ObservableObject, CBPeripheralManagerDe
     }
 }
 
+/// What a phone writes to the stand-in: its bedtime hours, in its own time zone (the stand-in's
+/// clock may be set to a different one).
+struct PhoneHours: Codable {
+    var schedule: BedtimeSchedule
+    var timeZone: String
+
+    func contains(_ date: Date) -> Bool {
+        var calendar = Calendar.current
+        if let zone = TimeZone(identifier: timeZone) { calendar.timeZone = zone }
+        return schedule.contains(date, calendar: calendar)
+    }
+}
+
 extension BeaconConfig {
-    /// Identifies the stand-in device. Same in every copy of the app, so choosing "Use a spare
-    /// iPad or iPhone" needs no typing.
-    static let standInUUID = UUID(uuidString: "E6B2E125-B543-4BA4-8D19-B68DBA9F147C")!
-    static let standIn = BeaconConfig(uuid: standInUUID.uuidString)
-
-    /// The stand-in is watched over a Bluetooth connection (HubMonitor), not as an iBeacon.
-    var isStandIn: Bool { uuid == Self.standIn.uuid }
-
     var displayName: String { isStandIn ? "Spare iPad or iPhone" : shortDescription }
 }

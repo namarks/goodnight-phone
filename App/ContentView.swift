@@ -129,7 +129,7 @@ struct ContentView: View {
             Text("Setup")
         } footer: {
             Text(usesStandIn
-                 ? "Your phone stays connected to the spare device and checks the signal every second, even when Lights Out is closed. Nothing is blocked until the boundary is set."
+                 ? "Your phone stays connected to the spare device. During bedtime hours it checks the signal every 2 seconds, even when Lights Out is closed. Nothing is blocked until the boundary is set."
                  : "“Always” location lets iOS wake Lights Out when you walk into the bedroom, even when the app is closed. Beacon detection needs Precise Location.")
         }
     }

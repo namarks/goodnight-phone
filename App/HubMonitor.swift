@@ -77,7 +77,16 @@ final class HubMonitor: NSObject, ObservableObject, CBCentralManagerDelegate, CB
         }
         if wanted {
             if central != nil {
-                if link != .connected { reconnect() }
+                if link != .connected {
+                    reconnect()
+                } else if let hub, !isListening {
+                    // Connected but not hearing the heartbeat (a missed re-add or a failed
+                    // subscribe): don't trust the last state, and try again.
+                    goOutside(reason: "can't hear the spare iPad or iPhone")
+                    hub.discoverServices([BeaconBroadcaster.serviceUUID])
+                } else {
+                    sendSchedule()   // in case an earlier send failed
+                }
             } else {
                 // Creating the manager shows the Bluetooth permission prompt the first time.
                 central = CBCentralManager(
@@ -102,10 +111,12 @@ final class HubMonitor: NSObject, ObservableObject, CBCentralManagerDelegate, CB
         pollTimer?.invalidate()
         pollTimer = nil
         if isForeground {
-            pollTimer = Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { [weak self] _ in
+            let timer = Timer(timeInterval: 1, repeats: true) { [weak self] _ in
                 MainActor.assumeIsolated { self?.poll() }
             }
-        } else if !Shared.schedule.contains(.now) {
+            RunLoop.main.add(timer, forMode: .common)   // keeps polling while the screen scrolls
+            pollTimer = timer
+        } else if Shared.beacon?.isStandIn == true, !Shared.schedule.contains(.now) {
             // The stand-in stays quiet outside bedtime hours, so nothing would update this before
             // bedtime starts. Start bedtime from "outside" rather than a stale "in the bedroom".
             pause()
@@ -114,8 +125,9 @@ final class HubMonitor: NSObject, ObservableObject, CBCentralManagerDelegate, CB
 
     /// Tells the stand-in your bedtime hours, so it only wakes this phone during them.
     func sendSchedule() {
+        let hours = PhoneHours(schedule: Shared.schedule, timeZone: TimeZone.current.identifier)
         guard let hub, hub.state == .connected, let scheduleCharacteristic,
-              let data = try? JSONEncoder().encode(Shared.schedule) else { return }
+              let data = try? JSONEncoder().encode(hours) else { return }
         hub.writeValue(data, for: scheduleCharacteristic, type: .withResponse)
     }
 
@@ -219,9 +231,22 @@ final class HubMonitor: NSObject, ObservableObject, CBCentralManagerDelegate, CB
             calibration.append(value)
             if calibration.count >= Self.calibrationSamples { finishCalibration() }
         }
-        guard let boundary, isListening, samples.count >= Self.minimumSamples else { return }
+        guard let boundary else {
+            goOutside(reason: "no bedroom boundary set")
+            return
+        }
+        guard isListening, samples.count >= Self.minimumSamples else { return }
+        // Blocker ignores a stand-in "in the bedroom" that hasn't been confirmed recently
+        // (Shared.isInRoom), so re-apply the shield when a stale one is confirmed again.
+        let wasStale = !Shared.isInRoom() && Shared.inRoom
+        Shared.hubLastHeard = .now
         if Shared.inRoom {
-            if median < boundary - Self.margin { RoomMonitor.shared.setInRoom(false) }
+            if median < boundary - Self.margin {
+                RoomMonitor.shared.setInRoom(false)
+            } else if wasStale {
+                Blocker.refresh(reason: "in the bedroom")
+                AppModel.shared.reload()
+            }
         } else if median >= boundary + Self.margin {
             RoomMonitor.shared.setInRoom(true)
         }
@@ -242,7 +267,9 @@ final class HubMonitor: NSObject, ObservableObject, CBCentralManagerDelegate, CB
     nonisolated func centralManager(_ central: CBCentralManager, willRestoreState dict: [String: Any]) {
         let restored = dict[CBCentralManagerRestoredStatePeripheralsKey] as? [CBPeripheral] ?? []
         MainActor.assumeIsolated {
-            guard let peripheral = restored.first else { return }
+            // Prefer the one we were actually connected to; drop leftover connection attempts.
+            guard let peripheral = restored.first(where: { $0.state == .connected }) ?? restored.first else { return }
+            for other in restored where other !== peripheral { central.cancelPeripheralConnection(other) }
             hub = peripheral
             peripheral.delegate = self
         }
@@ -307,8 +334,12 @@ final class HubMonitor: NSObject, ObservableObject, CBCentralManagerDelegate, CB
 
     nonisolated func peripheral(_ peripheral: CBPeripheral, didDiscoverServices error: Error?) {
         MainActor.assumeIsolated {
-            guard let service = peripheral.services?.first(where: { $0.uuid == BeaconBroadcaster.serviceUUID })
-            else { return }
+            guard peripheral === hub else { return }
+            guard let service = peripheral.services?.first(where: { $0.uuid == BeaconBroadcaster.serviceUUID }) else {
+                // Connected, but its broadcast is off. didModifyServices fires when it comes back.
+                goOutside(reason: "spare iPad or iPhone isn't broadcasting")
+                return
+            }
             peripheral.discoverCharacteristics(
                 [BeaconBroadcaster.heartbeatUUID, BeaconBroadcaster.scheduleUUID], for: service
             )
@@ -322,7 +353,12 @@ final class HubMonitor: NSObject, ObservableObject, CBCentralManagerDelegate, CB
     ) {
         MainActor.assumeIsolated {
             guard peripheral === hub else { return }
-            for characteristic in service.characteristics ?? [] {
+            let characteristics = service.characteristics ?? []
+            guard characteristics.contains(where: { $0.uuid == BeaconBroadcaster.heartbeatUUID }) else {
+                goOutside(reason: "spare iPad or iPhone isn't broadcasting")
+                return
+            }
+            for characteristic in characteristics {
                 switch characteristic.uuid {
                 case BeaconBroadcaster.heartbeatUUID: peripheral.setNotifyValue(true, for: characteristic)
                 case BeaconBroadcaster.scheduleUUID: scheduleCharacteristic = characteristic
@@ -341,7 +377,11 @@ final class HubMonitor: NSObject, ObservableObject, CBCentralManagerDelegate, CB
             guard peripheral === hub, characteristic.uuid == BeaconBroadcaster.heartbeatUUID else { return }
             let listening = error == nil && characteristic.isNotifying
             isListening = listening
-            if listening { sendSchedule() }
+            if listening {
+                sendSchedule()
+            } else {
+                goOutside(reason: "can't hear the spare iPad or iPhone")
+            }
         }
     }
 

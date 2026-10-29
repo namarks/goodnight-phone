@@ -19,7 +19,7 @@ enum Blocker {
     @discardableResult
     static func refresh(reason: String, now: Date = .now) -> Bool {
         let selection = Shared.selection
-        let shouldBlock = Shared.inRoom
+        let shouldBlock = Shared.isInRoom(at: now)
             && Shared.schedule.contains(now)
             && !selection.isEmptySelection
 
