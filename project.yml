@@ -42,12 +42,14 @@ targets:
         CFBundleVersion: $(CURRENT_PROJECT_VERSION)
         LightsOutAppGroup: group.${BUNDLE_PREFIX}.lightsout
         UILaunchScreen: {}
+        # No encryption beyond what iOS provides, so App Store Connect skips the export compliance question.
+        ITSAppUsesNonExemptEncryption: false
         UIApplicationSceneManifest:
           UIApplicationSupportsMultipleScenes: false
         UISupportedInterfaceOrientations:
           - UIInterfaceOrientationPortrait
-        NSLocationWhenInUseUsageDescription: "Lights Out uses your bedroom beacon to tell when you’re in the bedroom."
-        NSLocationAlwaysAndWhenInUseUsageDescription: "Choose “Always” so iOS can wake Lights Out to block apps the moment you walk into the bedroom, even when the app is closed."
+        NSLocationWhenInUseUsageDescription: "Lights Out checks whether your iPhone is near your bedroom beacon so it can block the apps you chose at bedtime. Your location never leaves your phone."
+        NSLocationAlwaysAndWhenInUseUsageDescription: "Choose “Always” so iOS can wake Lights Out when you walk into the bedroom and block your chosen apps, even when the app is closed. Lights Out only learns whether you’re near your beacon, and nothing leaves your phone."
         NSBluetoothAlwaysUsageDescription: "Lights Out uses Bluetooth to broadcast as a stand-in bedroom beacon from a spare iPad or iPhone."
     entitlements:
       path: Support/LightsOut.entitlements
