@@ -24,7 +24,9 @@ final class BeaconSignal: NSObject, ObservableObject, CLLocationManagerDelegate 
     }
 
     /// Ranges for `beacon`, replacing whatever was ranged before. Safe to call repeatedly.
+    /// The stand-in device isn't an iBeacon; HubMonitor reports its signal instead.
     func watch(_ beacon: BeaconConfig?) {
+        let beacon = beacon.flatMap { $0.isStandIn ? nil : $0 }
         guard beacon != watching else { return }
         stop()
         guard let beacon, let constraint = beacon.constraint else { return }

@@ -21,6 +21,7 @@ enum Shared {
         static let syncedSchedule = "syncedSchedule"
         static let beacon = "beacon"
         static let monitoredBeacon = "monitoredBeacon"
+        static let hubBoundary = "hubBoundary"
         static let log = "log"
     }
 
@@ -69,6 +70,13 @@ enum Shared {
     static var monitoredBeacon: BeaconConfig? {
         get { decode(BeaconConfig.self, Key.monitoredBeacon) }
         set { encode(newValue, Key.monitoredBeacon) }
+    }
+
+    /// With the spare-device stand-in: signal strength (dBm) measured at the bedroom door.
+    /// Stronger than this counts as in the bedroom.
+    static var hubBoundary: Int? {
+        get { defaults.object(forKey: Key.hubBoundary) as? Int }
+        set { defaults.set(newValue, forKey: Key.hubBoundary) }
     }
 
     // MARK: - Activity log (shown in the app; handy for tuning the beacon)

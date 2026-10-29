@@ -65,6 +65,7 @@ final class AppModel: ObservableObject {
             if AuthorizationCenter.shared.authorizationStatus == .approved {
                 BedtimeActivities.sync(newValue)
             }
+            HubMonitor.shared.sendSchedule()
             Blocker.refresh(reason: "bedtime hours changed")
             self?.reload()
         }
@@ -73,6 +74,7 @@ final class AppModel: ObservableObject {
     func saveBeacon(_ newValue: BeaconConfig?) {
         Shared.beacon = newValue
         beacon = newValue
+        HubMonitor.shared.sync()
         Task {
             await RoomMonitor.shared.syncCondition()
             reload()
@@ -82,6 +84,7 @@ final class AppModel: ObservableObject {
     /// Called when the app comes to the foreground.
     func refreshEverything() async {
         RoomMonitor.shared.start()   // no-op if already running
+        HubMonitor.shared.sync()
         if AuthorizationCenter.shared.authorizationStatus == .approved {
             BedtimeActivities.syncIfNeeded()
         }

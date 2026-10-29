@@ -7,6 +7,7 @@ struct ContentView: View {
     @StateObject private var location = LocationPermission()
     @StateObject private var signal = BeaconSignal()
     @ObservedObject private var broadcaster = BeaconBroadcaster.shared
+    @ObservedObject private var hub = HubMonitor.shared
     @Environment(\.scenePhase) private var scenePhase
 
     @State private var showingPicker = false
@@ -16,9 +17,12 @@ struct ContentView: View {
     /// Keeps the status card current if bedtime starts while the app is open.
     private let ticker = Timer.publish(every: 30, on: .main, in: .common).autoconnect()
 
+    /// The spare-device stand-in is watched over Bluetooth, so it needs a boundary instead of location.
+    private var usesStandIn: Bool { model.beacon?.isStandIn == true }
+
     private var setupDone: Bool {
-        model.screenTimeApproved && location.isReady
-            && !model.selection.isEmptySelection && model.beacon != nil
+        guard model.screenTimeApproved, !model.selection.isEmptySelection, model.beacon != nil else { return false }
+        return usesStandIn ? hub.boundary != nil && hub.link != .notAllowed : location.isReady
     }
 
     var body: some View {
@@ -53,14 +57,21 @@ struct ContentView: View {
             }
             .task {
                 signal.watch(model.beacon)
+                hub.setForeground(true)
+                broadcaster.restore()
                 await model.refreshEverything()
             }
             .onChange(of: model.beacon) { _, beacon in signal.watch(beacon) }
             .onChange(of: scenePhase) { _, phase in
-                if phase == .background { signal.stop() }
+                if phase == .background {
+                    signal.stop()
+                    hub.setForeground(false)
+                    broadcaster.suspend()
+                }
                 guard phase == .active else { return }
                 location.refresh()
                 signal.watch(model.beacon)
+                hub.setForeground(true)
                 broadcaster.resume()
                 Task { await model.refreshEverything() }
             }
@@ -79,12 +90,14 @@ struct ContentView: View {
                 button: "Allow"
             ) { Task { await model.requestScreenTime() } }
 
-            SetupRow(
-                title: "Location: Always + Precise",
-                detail: location.label,
-                done: location.isReady,
-                button: location.status == .notDetermined ? "Allow" : "Fix"
-            ) { location.request() }
+            if !usesStandIn {
+                SetupRow(
+                    title: "Location: Always + Precise",
+                    detail: location.label,
+                    done: location.isReady,
+                    button: location.status == .notDetermined ? "Allow" : "Fix"
+                ) { location.request() }
+            }
 
             SetupRow(
                 title: "Apps to block",
@@ -96,14 +109,28 @@ struct ContentView: View {
 
             SetupRow(
                 title: "Bedroom beacon",
-                detail: model.beacon?.shortDescription ?? "Not set",
+                detail: model.beacon?.displayName ?? "Not set",
                 done: model.beacon != nil,
                 button: "Add"
             ) { editingBeacon = true }
+
+            if usesStandIn {
+                SetupRow(
+                    title: "Bedroom boundary",
+                    detail: hub.isListening
+                        ? (hub.isCalibrating ? "Measuring…" : "Stand at the bedroom door, then tap Set")
+                        : hub.linkLabel,
+                    done: hub.boundary != nil,
+                    button: "Set",
+                    enabled: hub.isListening && !hub.isCalibrating
+                ) { hub.calibrate() }
+            }
         } header: {
             Text("Setup")
         } footer: {
-            Text("“Always” location lets iOS wake Lights Out when you walk into the bedroom, even when the app is closed. Beacon detection needs Precise Location.")
+            Text(usesStandIn
+                 ? "Your phone stays connected to the spare device and checks the signal every second, even when Lights Out is closed. Nothing is blocked until the boundary is set."
+                 : "“Always” location lets iOS wake Lights Out when you walk into the bedroom, even when the app is closed. Beacon detection needs Precise Location.")
         }
     }
 
@@ -150,12 +177,25 @@ struct ContentView: View {
     private var beaconSection: some View {
         Section {
             if let beacon = model.beacon {
-                LabeledContent("Beacon", value: beacon.shortDescription)
-                LabeledContent("Status", value: model.inRoom ? "In range" : "Out of range")
-                LabeledContent("Signal") {
-                    HStack(spacing: 6) {
-                        Text(signal.label)
-                        Image(systemName: "cellularbars", variableValue: signal.strength)
+                LabeledContent("Beacon", value: beacon.displayName)
+                LabeledContent("Status", value: model.inRoom ? "In the bedroom" : "Outside")
+                if beacon.isStandIn {
+                    LabeledContent("Connection", value: hub.linkLabel)
+                    LabeledContent("Signal") {
+                        HStack(spacing: 6) {
+                            Text(hub.rssi.map { "\($0) dBm" } ?? "—")
+                            Image(systemName: "cellularbars", variableValue: hub.strength)
+                        }
+                    }
+                    LabeledContent("Boundary", value: hub.boundary.map { "\($0) dBm" } ?? "Not set")
+                    Button(hub.isCalibrating ? "Measuring…" : "Set boundary here") { hub.calibrate() }
+                        .disabled(model.isLocked || !hub.isListening || hub.isCalibrating)
+                } else {
+                    LabeledContent("Signal") {
+                        HStack(spacing: 6) {
+                            Text(signal.label)
+                            Image(systemName: "cellularbars", variableValue: signal.strength)
+                        }
                     }
                 }
             }
@@ -164,7 +204,9 @@ struct ContentView: View {
         } header: {
             Text("Bedroom beacon")
         } footer: {
-            Text("Signal is live while the app is open. Blocking follows Status, and iOS takes about 30 seconds to register that you've left. If it still says “In range” after you step out of the room, turn the beacon's transmit power down.")
+            Text(usesStandIn
+                 ? "Stronger than the boundary counts as in the bedroom. Set it standing in the bedroom doorway, not next to the spare device; anywhere weaker, like the kitchen, counts as outside. During bedtime hours, changes register within about 6 seconds, even with the app closed."
+                 : "Signal is live while the app is open. Blocking follows Status, and iOS takes about 30 seconds to register that you've left. If it still says “In the bedroom” after you step out of the room, turn the beacon's transmit power down.")
         }
     }
 
@@ -394,7 +436,7 @@ private struct BeaconEditor: View {
                 } header: {
                     Text("No beacon yet?")
                 } footer: {
-                    Text("Fills in the stand-in UUID. On the spare device, open Lights Out and turn on Broadcast as bedroom beacon.")
+                    Text("Your phone connects to a spare iPad or iPhone running Lights Out, and you set where the bedroom ends by signal strength. On the spare device, open Lights Out and turn on Broadcast as bedroom beacon.")
                 }
 
                 Section {
@@ -447,17 +489,7 @@ private struct StandInBeaconView: View {
                 ))
                 LabeledContent("Status", value: broadcaster.label)
             } footer: {
-                Text("Leave Lights Out open with the device plugged in by the bed. iOS only broadcasts while the app is on screen, so the display stays on while this is on.")
-            }
-
-            Section {
-                Text(BeaconConfig.standIn.uuid)
-                    .font(.footnote.monospaced())
-                    .textSelection(.enabled)
-            } header: {
-                Text("UUID")
-            } footer: {
-                Text("On your iPhone, open the bedroom beacon settings and tap Use a spare iPad or iPhone. A phone or iPad can't turn its signal down like a real beacon, so the “bedroom” may reach past the door.")
+                Text("Leave Lights Out open with the device plugged in by the bed. iOS only keeps this running while the app is on screen, so the display stays on while this is on. On your iPhone, open the bedroom beacon settings, tap Use a spare iPad or iPhone, then set the bedroom boundary.")
             }
         }
         .navigationTitle("Stand-in beacon")

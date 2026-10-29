@@ -16,9 +16,10 @@ Personal iOS app: blocks chosen apps while the iPhone is in the bedroom (iBeacon
 
 - `Shared/` is compiled into both the app and the Monitor extension. Shared state lives in App Group UserDefaults (`Shared` enum). The App Group ID comes from the `LightsOutAppGroup` Info.plist key that project.yml injects.
 - `Blocker.refresh(reason:)` is the single decision point (in room AND bedtime hours AND selection non-empty). It's idempotent; call it whenever an input changes.
-- `App/RoomMonitor.swift`: CLMonitor + BeaconIdentityCondition, started on every launch from AppDelegate (required for background relaunch delivery).
-- `App/BeaconSignal.swift`: foreground-only beacon ranging for the live Signal row. Display only; never feeds `Shared.inRoom`.
-- `App/BeaconBroadcaster.swift`: stand-in mode for testing without a beacon. `BeaconBroadcaster.shared` broadcasts the fixed `BeaconConfig.standInUUID` on any screen while the app is in the foreground (iOS drops iBeacon data in the background).
+- `App/RoomMonitor.swift`: CLMonitor + BeaconIdentityCondition, started on every launch from AppDelegate (required for background relaunch delivery). `RoomMonitor.setInRoom` is the only writer of `Shared.inRoom`.
+- Two detection modes, picked by `Shared.beacon`: a real iBeacon (RoomMonitor/CLMonitor, binary in/out), or `BeaconConfig.standIn` (`isStandIn`), a spare iPad/iPhone watched by `App/HubMonitor.swift` over a CoreBluetooth connection. HubMonitor uses `bluetooth-central` background mode + state restoration, reads RSSI on each heartbeat notification (plus a 1 s poll while the app is in the foreground), and compares the median of the last 5 readings to `Shared.hubBoundary` (calibrated at the bedroom door) with ±3 dB margin. Can't hear the spare device (disconnected, service withdrawn, Bluetooth off) = outside. No boundary = never in the room.
+- `App/BeaconBroadcaster.swift`: the spare device's side (CBPeripheralManager GATT service: notify heartbeat every 2 s, plus a writable characteristic where each phone writes its `BedtimeSchedule`; beats go only to phones inside their hours, with one pause value when hours end). Foreground only: it withdraws the service when the app leaves the screen so phones don't freeze on a stale reading, and the app keeps the screen awake while it's on.
+- `App/BeaconSignal.swift`: foreground-only beacon ranging for the iBeacon Signal row. Display only; never feeds `Shared.inRoom`.
 - `Extensions/Monitor`: DeviceActivityMonitor, which only calls `Blocker.refresh`. `Extensions/Shield` and `Extensions/ShieldAction`: custom blocked screen and its Close button.
 
 ## Conventions
