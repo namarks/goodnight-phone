@@ -15,7 +15,7 @@ Personal iOS app: blocks chosen apps while the iPhone is in the bedroom (iBeacon
 ## Layout
 
 - `Shared/` is compiled into both the app and the Monitor extension. Shared state lives in App Group UserDefaults (`Shared` enum). The App Group ID comes from the `LightsOutAppGroup` Info.plist key that project.yml injects.
-- `Blocker.refresh(reason:)` is the single decision point (in room AND bedtime hours AND selection non-empty). It's idempotent; call it whenever an input changes.
+- `Blocker.refresh(reason:)` is the single decision point ((in room AND bedtime hours, OR a `TestBlock` running) AND selection non-empty). `Shared/TestBlock.swift` is the 2-minute "Try it now" block for new users and App Review; it only adds a block and can't be cancelled. It's idempotent; call it whenever an input changes.
 - `App/RoomMonitor.swift`: CLMonitor + BeaconIdentityCondition, started on every launch from AppDelegate (required for background relaunch delivery).
 - `App/BeaconSignal.swift`: foreground-only beacon ranging for the live Signal row. Display only; never feeds `Shared.inRoom`.
 - `App/BeaconBroadcaster.swift`: stand-in mode for testing without a beacon. `BeaconBroadcaster.shared` broadcasts the fixed `BeaconConfig.standInUUID` on any screen while the app is in the foreground (iOS drops iBeacon data in the background).
