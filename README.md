@@ -6,7 +6,7 @@ A personal Brick Night: your chosen apps lock automatically when your iPhone is 
 
 - A Mac with Xcode and a **paid** Apple Developer account ($99/year). Free accounts (Personal Team) generally can't sign the Family Controls capability this needs.
 - An iPhone on iOS 17 or later.
-- **An iBeacon with adjustable transmit power**, roughly $15–25 (Blue Charm, Minew and Kontakt.io all sell them). You'll need its UUID, which is on the box or in the vendor's app. An ESP32 board broadcasting iBeacon over USB power also works.
+- **An iBeacon with adjustable transmit power**, roughly $15–25 (Blue Charm, Minew and Kontakt.io all sell them). You'll need its UUID, which is on the box or in the vendor's app. An ESP32 board broadcasting iBeacon over USB power also works. To test before it arrives, a spare iPad or iPhone can stand in (see [No beacon yet?](#no-beacon-yet)).
 
 ## Setup (about 10 minutes)
 
@@ -45,6 +45,7 @@ Bedtime starts/ends ──► DeviceActivity wakes the Monitor extension ──�
 | `Shared/BedtimeActivities.swift` | Registers short DeviceActivity windows at the start and end of bedtime to wake the extension. iOS delivers these while the phone is in use, so if it's asleep on the nightstand at 9 PM, blocking turns on the next time you pick it up. |
 | `App/RoomMonitor.swift` | Watches the beacon with `CLMonitor`, and on iOS 18+ holds a `CLServiceSession` once "Always" is granted. It's started on every launch, which is how iOS delivers enter/exit events in the background. |
 | `App/ContentView.swift` | Status card, setup checklist, apps, hours, beacon, activity log. |
+| `App/BeaconBroadcaster.swift` | Stand-in mode: broadcasts a fixed iBeacon UUID from a spare iPad or iPhone. |
 | `Extensions/Monitor` | `DeviceActivityMonitor` that calls `Blocker` at bedtime boundaries. |
 | `Extensions/Shield` | The custom "Not in the bedroom" screen. |
 | `Extensions/ShieldAction` | The shield's only button, Close. There's no "unlock anyway". |
@@ -58,6 +59,16 @@ Like Brick, this isn't airtight on purpose. For a real emergency, go to Settings
 ## Adding your partner's phone
 
 Plug their iPhone into the Mac once so Xcode registers it with your team, then press ⌘R with their phone selected. Both phones watch the same beacon, and each person picks their own apps and hours on their own phone.
+
+## No beacon yet?
+
+A spare iPad or iPhone can stand in while you test:
+
+1. Install Lights Out on the spare device the same way (plug it in, pick it as the run destination, ⌘R). It doesn't need the setup checklist.
+2. On the spare device, open **No beacon yet? → Broadcast as bedroom beacon**, turn it on and allow Bluetooth. Leave it on that screen, plugged in, by the bed. iOS only broadcasts while the app is on screen, so the display stays on.
+3. On your iPhone, tap **Add beacon…** (or **Change beacon…**), then **Use a spare iPad or iPhone**, then **Save**.
+
+A phone or iPad can't turn its signal down like a real beacon, so the "bedroom" may reach past the door. Use it to check that blocking works, then switch to a real beacon.
 
 ## Troubleshooting
 

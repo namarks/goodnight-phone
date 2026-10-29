@@ -37,6 +37,7 @@ struct ContentView: View {
                 appsSection
                 hoursSection
                 beaconSection
+                standInSection
                 activitySection
             }
             .navigationTitle("Lights Out")
@@ -148,6 +149,16 @@ struct ContentView: View {
             Text("Bedroom beacon")
         } footer: {
             Text("Leaving takes about 30 seconds to register. If it still says “In range” after you step out of the room, turn the beacon's transmit power down.")
+        }
+    }
+
+    private var standInSection: some View {
+        Section {
+            NavigationLink("Broadcast as bedroom beacon") { StandInBeaconView() }
+        } header: {
+            Text("No beacon yet?")
+        } footer: {
+            Text("Turn this on in Lights Out on a spare iPad or iPhone to stand in for the beacon while you test.")
         }
     }
 
@@ -343,6 +354,18 @@ private struct BeaconEditor: View {
                 }
 
                 Section {
+                    Button("Use a spare iPad or iPhone") {
+                        uuid = BeaconConfig.standIn.uuid
+                        major = ""
+                        minor = ""
+                    }
+                } header: {
+                    Text("No beacon yet?")
+                } footer: {
+                    Text("Fills in the stand-in UUID. On the spare device, open Lights Out and turn on Broadcast as bedroom beacon.")
+                }
+
+                Section {
                     TextField("Major", text: $major).keyboardType(.numberPad)
                     TextField("Minor", text: $minor).keyboardType(.numberPad)
                 } header: {
@@ -374,6 +397,55 @@ private struct BeaconEditor: View {
                     .disabled(draft == nil)
                 }
             }
+        }
+    }
+}
+
+// MARK: - Stand-in beacon
+
+private struct StandInBeaconView: View {
+    @StateObject private var broadcaster = BeaconBroadcaster()
+    @Environment(\.scenePhase) private var scenePhase
+
+    var body: some View {
+        Form {
+            Section {
+                Toggle("Broadcast as bedroom beacon", isOn: Binding(
+                    get: { broadcaster.isOn },
+                    set: { broadcaster.setOn($0) }
+                ))
+                LabeledContent("Status", value: statusText)
+            } footer: {
+                Text("Leave this screen open with the device plugged in by the bed. iOS only broadcasts while Lights Out is on screen, so the display stays on while this is on.")
+            }
+
+            Section {
+                Text(BeaconConfig.standIn.uuid)
+                    .font(.footnote.monospaced())
+                    .textSelection(.enabled)
+            } header: {
+                Text("UUID")
+            } footer: {
+                Text("On your iPhone, open the bedroom beacon settings and tap Use a spare iPad or iPhone. A phone or iPad can't turn its signal down like a real beacon, so the “bedroom” may reach past the door.")
+            }
+        }
+        .navigationTitle("Stand-in beacon")
+        .navigationBarTitleDisplayMode(.inline)
+        .onChange(of: scenePhase) { _, phase in
+            if phase == .active { broadcaster.resume() }
+        }
+        .onDisappear { broadcaster.stop() }
+    }
+
+    private var statusText: String {
+        switch broadcaster.status {
+        case .off: return "Off"
+        case .starting: return "Starting…"
+        case .broadcasting: return "Broadcasting"
+        case .bluetoothOff: return "Turn on Bluetooth"
+        case .notAllowed: return "Bluetooth off for Lights Out — open Settings"
+        case .unsupported: return "Not supported on this device"
+        case .failed(let message): return message
         }
     }
 }

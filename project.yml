@@ -48,6 +48,7 @@ targets:
           - UIInterfaceOrientationPortrait
         NSLocationWhenInUseUsageDescription: "Lights Out uses your bedroom beacon to tell when you’re in the bedroom."
         NSLocationAlwaysAndWhenInUseUsageDescription: "Choose “Always” so iOS can wake Lights Out to block apps the moment you walk into the bedroom, even when the app is closed."
+        NSBluetoothAlwaysUsageDescription: "Lights Out uses Bluetooth to broadcast as a stand-in bedroom beacon from a spare iPad or iPhone."
     entitlements:
       path: Support/LightsOut.entitlements
       properties:
