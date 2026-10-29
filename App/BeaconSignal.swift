@@ -1,6 +1,6 @@
 import CoreLocation
 
-/// Live signal from the bedroom beacon while Lights Out is open, for tuning the beacon.
+/// Live signal from the bedroom beacon while Goodnight Phone is open, for tuning the beacon.
 /// Uses beacon ranging, which iOS only runs in the foreground. It's display-only:
 /// whether you're in the room (and so whether apps are blocked) still comes from RoomMonitor.
 @MainActor

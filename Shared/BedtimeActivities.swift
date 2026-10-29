@@ -2,8 +2,8 @@ import Foundation
 import DeviceActivity
 
 extension DeviceActivityName {
-    static let bedtimeStart = Self("lightsout.bedtimeStart")
-    static let bedtimeEnd = Self("lightsout.bedtimeEnd")
+    static let bedtimeStart = Self("goodnightphone.bedtimeStart")
+    static let bedtimeEnd = Self("goodnightphone.bedtimeEnd")
 }
 
 /// Wakes the DeviceActivity extension at the start and end of bedtime hours,

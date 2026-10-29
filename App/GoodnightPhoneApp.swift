@@ -2,7 +2,7 @@ import SwiftUI
 import UIKit
 
 @main
-struct LightsOutApp: App {
+struct GoodnightPhoneApp: App {
     @UIApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
     @AppStorage("didFinishOnboarding") private var didFinishOnboarding = false
 

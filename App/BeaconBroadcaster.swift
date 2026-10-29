@@ -1,7 +1,7 @@
 import CoreBluetooth
 import UIKit
 
-/// Lets a spare iPad or iPhone running Lights Out stand in for the bedroom beacon. It offers a
+/// Lets a spare iPad or iPhone running Goodnight Phone stand in for the bedroom beacon. It offers a
 /// Bluetooth connection (not an iBeacon); connected phones read the signal strength on each
 /// heartbeat (see HubMonitor). Each phone tells it its bedtime hours, and it only sends that
 /// phone heartbeats during them, so the phone isn't woken all day.
@@ -57,7 +57,7 @@ final class BeaconBroadcaster: NSObject, ObservableObject, CBPeripheralManagerDe
             default: return "\(phones) phones connected"
             }
         case .bluetoothOff: return "Turn on Bluetooth"
-        case .notAllowed: return "Bluetooth off for Lights Out — open Settings"
+        case .notAllowed: return "Bluetooth off for Goodnight Phone — open Settings"
         case .unsupported: return "Not supported on this device"
         case .failed(let message): return message
         }
@@ -142,7 +142,7 @@ final class BeaconBroadcaster: NSObject, ObservableObject, CBPeripheralManagerDe
                 status = .starting
                 manager.startAdvertising([
                     CBAdvertisementDataServiceUUIDsKey: [Self.serviceUUID],
-                    CBAdvertisementDataLocalNameKey: "Lights Out",
+                    CBAdvertisementDataLocalNameKey: "Goodnight Phone",
                 ])
             }
         case .poweredOff: status = .bluetoothOff

@@ -50,7 +50,7 @@ struct ContentView: View {
                 activitySection
                 aboutSection
             }
-            .navigationTitle("Lights Out")
+            .navigationTitle("Goodnight Phone")
             .familyActivityPicker(isPresented: $showingPicker, selection: $pickerSelection)
             .onChange(of: showingPicker) { _, isShowing in
                 if !isShowing { model.saveSelection(pickerSelection) }
@@ -88,7 +88,7 @@ struct ContentView: View {
         Section {
             SetupRow(
                 title: "Screen Time access",
-                detail: model.screenTimeApproved ? "Allowed" : "Lets Lights Out block apps",
+                detail: model.screenTimeApproved ? "Allowed" : "Lets Goodnight Phone block apps",
                 done: model.screenTimeApproved,
                 button: "Allow"
             ) { Task { await model.requestScreenTime() } }
@@ -132,8 +132,8 @@ struct ContentView: View {
             Text("Setup")
         } footer: {
             Text(usesStandIn
-                 ? "Your phone stays connected to the spare device. During bedtime hours it checks the signal every 2 seconds, even when Lights Out is closed. Nothing is blocked until the boundary is set."
-                 : "“Always” location lets iOS wake Lights Out when you walk into the bedroom, even when the app is closed. Beacon detection needs Precise Location.")
+                 ? "Your phone stays connected to the spare device. During bedtime hours it checks the signal every 2 seconds, even when Goodnight Phone is closed. Nothing is blocked until the boundary is set."
+                 : "“Always” location lets iOS wake Goodnight Phone when you walk into the bedroom, even when the app is closed. Beacon detection needs Precise Location.")
         }
     }
 
@@ -238,7 +238,7 @@ struct ContentView: View {
                 Label("Stand-in beacon", systemImage: "dot.radiowaves.left.and.right")
             }
         } footer: {
-            Text("This device is standing in for the bedroom beacon. Keep Lights Out open, plugged in, by the bed.")
+            Text("This device is standing in for the bedroom beacon. Keep Goodnight Phone open, plugged in, by the bed.")
         }
     }
 
@@ -250,7 +250,7 @@ struct ContentView: View {
         } header: {
             Text("No beacon yet?")
         } footer: {
-            Text("Turn this on in Lights Out on a spare iPad or iPhone to stand in for the beacon while you test.")
+            Text("Turn this on in Goodnight Phone on a spare iPad or iPhone to stand in for the beacon while you test.")
         }
     }
 
@@ -276,7 +276,7 @@ struct ContentView: View {
         } header: {
             Text("About")
         } footer: {
-            Text("Everything Lights Out stores stays on this iPhone. In an emergency, turn Lights Out off in Settings → Screen Time → Apps with Screen Time Access to lift every block.")
+            Text("Everything Goodnight Phone stores stays on this iPhone. In an emergency, turn Goodnight Phone off in Settings → Screen Time → Apps with Screen Time Access to lift every block.")
         }
     }
 
@@ -468,7 +468,7 @@ private struct BeaconEditor: View {
                 } header: {
                     Text("No beacon yet?")
                 } footer: {
-                    Text("Your phone connects to a spare iPad or iPhone running Lights Out, and you set where the bedroom ends by signal strength. On the spare device, open Lights Out and turn on Broadcast as bedroom beacon.")
+                    Text("Your phone connects to a spare iPad or iPhone running Goodnight Phone, and you set where the bedroom ends by signal strength. On the spare device, open Goodnight Phone and turn on Broadcast as bedroom beacon.")
                 }
 
                 Section {
@@ -521,7 +521,7 @@ private struct StandInBeaconView: View {
                 ))
                 LabeledContent("Status", value: broadcaster.label)
             } footer: {
-                Text("Leave Lights Out open with the device plugged in by the bed. iOS only keeps this running while the app is on screen, so the display stays on while this is on. On your iPhone, open the bedroom beacon settings, tap Use a spare iPad or iPhone, then set the bedroom boundary.")
+                Text("Leave Goodnight Phone open with the device plugged in by the bed. iOS only keeps this running while the app is on screen, so the display stays on while this is on. On your iPhone, open the bedroom beacon settings, tap Use a spare iPad or iPhone, then set the bedroom boundary.")
             }
         }
         .navigationTitle("Stand-in beacon")
