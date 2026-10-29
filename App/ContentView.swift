@@ -42,6 +42,7 @@ struct ContentView: View {
                 beaconSection
                 standInSection
                 activitySection
+                aboutSection
             }
             .navigationTitle("Lights Out")
             .familyActivityPicker(isPresented: $showingPicker, selection: $pickerSelection)
@@ -207,6 +208,16 @@ struct ContentView: View {
                         .foregroundStyle(.secondary)
                 }
             }
+        }
+    }
+
+    private var aboutSection: some View {
+        Section {
+            Link("Privacy policy", destination: AppLinks.privacyPolicy)
+        } header: {
+            Text("About")
+        } footer: {
+            Text("Everything Lights Out stores stays on this iPhone. In an emergency, turn Lights Out off in Settings → Screen Time → Apps with Screen Time Access to lift every block.")
         }
     }
 
