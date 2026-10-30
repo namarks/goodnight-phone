@@ -108,4 +108,33 @@ final class BedtimeScheduleTests: XCTestCase {
         let decoded = try JSONDecoder().decode(BedtimeSchedule.self, from: JSONEncoder().encode(schedule))
         XCTAssertEqual(decoded, schedule)
     }
+
+    // MARK: - Hours by night row
+
+    func testOwnHoursMatchingTheUsualOnesAreTheSame() {
+        var schedule = BedtimeSchedule()
+        schedule.nights[friday - 1] = .hours(start: 21 * 60, end: 7 * 60)   // "Different hours", untouched
+        XCTAssertFalse(schedule.variesByNight)
+        XCTAssertEqual(schedule.nightsSummary, "Same hours")
+    }
+
+    func testNightsSummary() {
+        var schedule = BedtimeSchedule()
+        XCTAssertEqual(schedule.nightsSummary, "Same hours")
+        schedule.nights[friday - 1] = .off
+        schedule.nights[saturday - 1] = .off
+        XCTAssertTrue(schedule.variesByNight)
+        XCTAssertEqual(schedule.nightsSummary, "Same hours", "nights off show on the day circles instead")
+        schedule.nights[sunday - 1] = .hours(start: 22 * 60, end: 6 * 60)
+        XCTAssertEqual(schedule.nightsSummary, "Varies")
+        schedule.nights = Array(repeating: .off, count: 7)
+        XCTAssertEqual(schedule.nightsSummary, "All off")
+    }
+
+    func testEveryNightSharingOtherHoursShowsThem() {
+        var schedule = BedtimeSchedule()
+        schedule.nights = Array(repeating: .hours(start: 22 * 60, end: 6 * 60), count: 7)
+        schedule.nights[friday - 1] = .off
+        XCTAssertEqual(schedule.nightsSummary, BedtimeSchedule.summary(start: 22 * 60, end: 6 * 60))
+    }
 }

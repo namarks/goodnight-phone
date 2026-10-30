@@ -66,8 +66,23 @@ struct BedtimeSchedule: Codable, Equatable {
         return Set((1...7).compactMap { hours(onWeekday: $0) }.flatMap { [$0.start, $0.end] })
     }
 
-    /// Whether any night differs from the usual hours.
-    var variesByNight: Bool { nights.contains { $0 != .usual } }
+    /// Whether any night is off or has hours other than the usual ones. A night set to its own
+    /// hours that happen to match the usual ones doesn't count.
+    var variesByNight: Bool {
+        (1...7).contains { weekday in
+            guard let hours = self.hours(onWeekday: weekday) else { return true }
+            return hours != (startMinutes, endMinutes)
+        }
+    }
+
+    /// For the Hours by night row, about the nights that are on (the day circles show which):
+    /// "Same hours", the hours they all share when that's not the usual ones, "Varies", or "All off".
+    var nightsSummary: String {
+        let on = (1...7).compactMap { hours(onWeekday: $0) }
+        guard let shared = on.first else { return "All off" }
+        guard on.allSatisfy({ $0 == shared }) else { return "Varies" }
+        return shared == (startMinutes, endMinutes) ? "Same hours" : Self.summary(start: shared.start, end: shared.end)
+    }
 
     var summary: String {
         guard limitToHours else { return "Any time" }
