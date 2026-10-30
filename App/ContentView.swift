@@ -515,7 +515,7 @@ private struct BeaconEditor: View {
                     Link(destination: AppLinks.recommendedBeacon) {
                         Label("Get the recommended beacon (about $19)", systemImage: "cart")
                     }
-                    Button("Use a spare iPad or iPhone") {
+                    Button("Use a bedroom hub") {
                         uuid = BeaconConfig.standIn.uuid
                         major = ""
                         minor = ""
@@ -523,7 +523,7 @@ private struct BeaconEditor: View {
                 } header: {
                     Text("No beacon yet?")
                 } footer: {
-                    Text("The Blue Charm BC-U1 plugs into any USB charger, so there's no battery to run out, and Goodnight Phone sets it up for you.\n\nOr, to start tonight, your phone connects to a spare iPad or iPhone running Goodnight Phone, and you set where the bedroom ends by signal strength. On the spare device, open Goodnight Phone and turn on Broadcast as bedroom beacon.")
+                    Text("The Blue Charm BC-U1 plugs into any USB charger, so there's no battery to run out, and Goodnight Phone sets it up for you.\n\nOr use a bedroom hub: a spare iPad or iPhone running Goodnight Phone (open it there and turn on Broadcast as bedroom beacon), or a hub board. Your phone stays connected to it, and you set where the bedroom ends by standing in the doorway.")
                 }
 
                 Section {
@@ -775,7 +775,7 @@ private struct StandInBeaconView: View {
                 ))
                 LabeledContent("Status", value: broadcaster.label)
             } footer: {
-                Text("Leave Goodnight Phone open with the device plugged in by the bed. iOS only keeps this running while the app is on screen, so the display stays on while this is on. On your iPhone, open the bedroom beacon settings, tap Use a spare iPad or iPhone, then set the bedroom boundary.")
+                Text("Leave Goodnight Phone open with the device plugged in by the bed. iOS only keeps this running while the app is on screen, so the display stays on while this is on. On your iPhone, open the bedroom beacon settings, tap Use a bedroom hub, then set the bedroom boundary.")
             }
         }
         .navigationTitle("Stand-in beacon")

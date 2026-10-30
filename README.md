@@ -78,11 +78,11 @@ Plug their iPhone into the Mac once so Xcode registers it with your team, then p
 
 ## No beacon yet?
 
-A spare iPad or iPhone can be the beacon. This works like Brick Night: your phone stays connected to the spare device and decides by signal strength, so you choose where the bedroom ends instead of tuning transmit power.
+A spare iPad or iPhone can be the beacon (the app calls this a **bedroom hub**; an ESP32 board flashed with [`hardware/esp32-hub.yaml`](hardware/esp32-hub.yaml) works the same way and needs no screen left on). This works like Brick Night: your phone stays connected to the spare device and decides by signal strength, so you choose where the bedroom ends instead of tuning transmit power.
 
 1. Install Goodnight Phone on the spare device the same way (plug it in, pick it as the run destination, ⌘R). It doesn't need the setup checklist.
 2. On the spare device, open **No beacon yet? → Broadcast as bedroom beacon**, turn it on and allow Bluetooth. Leave Goodnight Phone open (any screen), plugged in, by the bed. iOS only keeps this running while the app is on screen, so the display stays on.
-3. On your iPhone, tap **Add beacon…** (or **Change beacon…**), then **Use a spare iPad or iPhone**, then **Save**, and allow Bluetooth.
+3. On your iPhone, tap **Add beacon…** (or **Change beacon…**), then **Use a bedroom hub**, then **Save**, and allow Bluetooth.
 4. Once it says **Connected**, stand in the bedroom doorway (not next to the spare device) and tap **Set** on **Bedroom boundary** (or **Set boundary here** under Bedroom beacon). It measures for about five seconds. Nothing is blocked until this is set.
 
 Anywhere the signal is stronger than the boundary counts as the bedroom; weaker counts as outside. During bedtime hours, walking in registers within about 10 seconds and leaving within about 30, with the app open or closed; leaving is slower so a weak moment by the bed doesn't lift the block. Like the other settings, the boundary is locked while apps are blocked, so to move it inward, do it outside bedtime hours.

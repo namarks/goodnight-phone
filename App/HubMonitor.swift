@@ -80,7 +80,7 @@ final class HubMonitor: NSObject, ObservableObject, CBCentralManagerDelegate, CB
                 } else if let hub, !isListening {
                     // Connected but not hearing the heartbeat (a missed re-add or a failed
                     // subscribe): don't trust the last state, and try again.
-                    goOutside(reason: "can't hear the spare iPad or iPhone")
+                    goOutside(reason: "can't hear the bedroom hub")
                     hub.discoverServices([BeaconBroadcaster.serviceUUID])
                 } else {
                     sendSchedule()   // in case an earlier send failed
@@ -147,7 +147,7 @@ final class HubMonitor: NSObject, ObservableObject, CBCentralManagerDelegate, CB
             return
         }
         link = .searching
-        goOutside(reason: "can't reach the spare iPad or iPhone")
+        goOutside(reason: "can't reach the bedroom hub")
         if let hub { central.connect(hub) }
         central.scanForPeripherals(withServices: [BeaconBroadcaster.serviceUUID])
     }
@@ -165,7 +165,7 @@ final class HubMonitor: NSObject, ObservableObject, CBCentralManagerDelegate, CB
     private func connected(_ peripheral: CBPeripheral) {
         guard peripheral === hub else { return }
         central?.stopScan()
-        if link != .connected { Shared.log("Connected to the spare iPad or iPhone") }
+        if link != .connected { Shared.log("Connected to the bedroom hub") }
         link = .connected
         forgetReadings()
         peripheral.discoverServices([BeaconBroadcaster.serviceUUID])
@@ -174,7 +174,7 @@ final class HubMonitor: NSObject, ObservableObject, CBCentralManagerDelegate, CB
     /// Out of reach (or the stand-in stopped), so you're not in the bedroom.
     private func disconnected(_ peripheral: CBPeripheral) {
         guard peripheral === hub else { return }
-        if link == .connected { Shared.log("Lost the spare iPad or iPhone") }
+        if link == .connected { Shared.log("Lost the bedroom hub") }
         forgetReadings()
         if Shared.inRoom { RoomMonitor.shared.setInRoom(false) }
         reconnect()
@@ -185,7 +185,7 @@ final class HubMonitor: NSObject, ObservableObject, CBCentralManagerDelegate, CB
     private func serviceGone(_ peripheral: CBPeripheral) {
         guard peripheral === hub else { return }
         forgetReadings()
-        goOutside(reason: "spare iPad or iPhone stopped broadcasting")
+        goOutside(reason: "bedroom hub stopped broadcasting")
         peripheral.discoverServices([BeaconBroadcaster.serviceUUID])
     }
 
@@ -331,7 +331,7 @@ final class HubMonitor: NSObject, ObservableObject, CBCentralManagerDelegate, CB
             guard peripheral === hub else { return }
             guard let service = peripheral.services?.first(where: { $0.uuid == BeaconBroadcaster.serviceUUID }) else {
                 // Connected, but its broadcast is off. didModifyServices fires when it comes back.
-                goOutside(reason: "spare iPad or iPhone isn't broadcasting")
+                goOutside(reason: "bedroom hub isn't broadcasting")
                 return
             }
             peripheral.discoverCharacteristics(
@@ -349,7 +349,7 @@ final class HubMonitor: NSObject, ObservableObject, CBCentralManagerDelegate, CB
             guard peripheral === hub else { return }
             let characteristics = service.characteristics ?? []
             guard characteristics.contains(where: { $0.uuid == BeaconBroadcaster.heartbeatUUID }) else {
-                goOutside(reason: "spare iPad or iPhone isn't broadcasting")
+                goOutside(reason: "bedroom hub isn't broadcasting")
                 return
             }
             for characteristic in characteristics {
@@ -374,7 +374,7 @@ final class HubMonitor: NSObject, ObservableObject, CBCentralManagerDelegate, CB
             if listening {
                 sendSchedule()
             } else {
-                goOutside(reason: "can't hear the spare iPad or iPhone")
+                goOutside(reason: "can't hear the bedroom hub")
             }
         }
     }

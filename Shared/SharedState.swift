@@ -172,7 +172,7 @@ struct BeaconConfig: Codable, Equatable {
     }
 
     /// Identifies the spare-device stand-in. Same in every copy of the app, so choosing "Use a
-    /// spare iPad or iPhone" needs no typing.
+    /// bedroom hub" needs no typing.
     static let standInUUID = UUID(uuidString: "E6B2E125-B543-4BA4-8D19-B68DBA9F147C")!
     static let standIn = BeaconConfig(uuid: standInUUID.uuidString)
 
