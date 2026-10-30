@@ -270,7 +270,7 @@ struct PhoneHours: Codable {
 
 extension BeaconConfig {
     var displayName: String {
-        if isStandIn { return "Spare iPad or iPhone" }
+        if isStandIn { return "Bedroom hub" }
         if Shared.blueCharm?.uuid == uuid { return "Blue Charm" }
         return shortDescription
     }

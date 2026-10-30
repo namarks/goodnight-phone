@@ -6,7 +6,7 @@ A personal Brick Night: your chosen apps lock automatically when your iPhone is 
 
 - A Mac with Xcode and a **paid** Apple Developer account ($99/year). Free accounts (Personal Team) generally can't sign the Family Controls capability this needs.
 - An iPhone on iOS 17 or later.
-- **An iBeacon with adjustable transmit power**, roughly $15–25. We recommend the [Blue Charm BC-U1](https://www.amazon.com/dp/B09FYNK94F) (about $19): it runs off any USB-A charger, so there's no battery to die and quietly end blocking, and its power goes down to −40 dBm. Goodnight Phone sets it up itself, no other app needed: it gives the beacon an ID of its own and lets you shorten or lengthen its range from the app. Any other iBeacon works too (Minew and Kontakt.io sell them); you'll need its UUID, which is on the box or in the vendor's app, and you tune its range in the vendor's app. An ESP32 board broadcasting iBeacon over USB power also works. To test before it arrives, a spare iPad or iPhone can stand in (see [No beacon yet?](#no-beacon-yet)).
+- **An iBeacon with adjustable transmit power**, roughly $15–25. We recommend the [Blue Charm BC-U1](https://www.amazon.com/dp/B09FYNK94F) (about $19): it runs off any USB-A charger, so there's no battery to die and quietly end blocking, and its power goes down to −40 dBm. Goodnight Phone sets it up itself, no other app needed: it gives the beacon an ID of its own and lets you shorten or lengthen its range from the app. Any other iBeacon works too (Minew and Kontakt.io sell them); you'll need its UUID, which is on the box or in the vendor's app, and you tune its range in the vendor's app. An ESP32 board broadcasting iBeacon over USB power also works; [`hardware/esp32-ibeacon.yaml`](hardware/esp32-ibeacon.yaml) is a ready ESPHome config (tested on a Seeed XIAO ESP32-C6). To test before it arrives, a spare iPad or iPhone can stand in (see [No beacon yet?](#no-beacon-yet)).
 
 ## Setup (about 10 minutes)
 
@@ -78,14 +78,14 @@ Plug their iPhone into the Mac once so Xcode registers it with your team, then p
 
 ## No beacon yet?
 
-A spare iPad or iPhone can be the beacon. This works like Brick Night: your phone stays connected to the spare device and decides by signal strength, so you choose where the bedroom ends instead of tuning transmit power.
+A spare iPad or iPhone can be the beacon (the app calls this a **bedroom hub**; an ESP32 board flashed with [`hardware/esp32-hub.yaml`](hardware/esp32-hub.yaml) works the same way and needs no screen left on). This works like Brick Night: your phone stays connected to the spare device and decides by signal strength, so you choose where the bedroom ends instead of tuning transmit power.
 
 1. Install Goodnight Phone on the spare device the same way (plug it in, pick it as the run destination, ⌘R). It doesn't need the setup checklist.
 2. On the spare device, open **No beacon yet? → Broadcast as bedroom beacon**, turn it on and allow Bluetooth. Leave Goodnight Phone open (any screen), plugged in, by the bed. iOS only keeps this running while the app is on screen, so the display stays on.
-3. On your iPhone, tap **Add beacon…** (or **Change beacon…**), then **Use a spare iPad or iPhone**, then **Save**, and allow Bluetooth.
+3. On your iPhone, tap **Add beacon…** (or **Change beacon…**), then **Use a bedroom hub**, then **Save**, and allow Bluetooth.
 4. Once it says **Connected**, stand in the bedroom doorway (not next to the spare device) and tap **Set** on **Bedroom boundary** (or **Set boundary here** under Bedroom beacon). It measures for about five seconds. Nothing is blocked until this is set.
 
-Anywhere the signal is stronger than the boundary counts as the bedroom; weaker counts as outside. During bedtime hours, walking in registers within about 10 seconds and leaving within about 30, with the app open or closed; leaving is slower so a weak moment by the bed doesn't lift the block. Like the other settings, the boundary is locked while apps are blocked, so to move it inward, do it outside bedtime hours.
+Anywhere the signal is stronger than the boundary counts as the bedroom; weaker counts as outside. During bedtime hours, walking in registers within about 10 seconds and leaving within about 15, with the app open or closed; leaving is slower so a weak moment by the bed doesn't lift the block. Like the other settings, the boundary is locked while apps are blocked, so to move it inward, do it outside bedtime hours.
 
 For battery use, see [Battery](#battery).
 

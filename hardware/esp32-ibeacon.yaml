@@ -1,0 +1,49 @@
+# Turns a USB-powered ESP32 board into a Goodnight Phone bedroom beacon (plain iBeacon, no Wi-Fi).
+# Tested target: Seeed Studio XIAO ESP32-C6. Other ESP32 boards: change the esp32 block.
+#
+#   1. Make a UUID of your own: run `uuidgen` and paste it below.
+#   2. Plug the board into your Mac and run: esphome run hardware/esp32-ibeacon.yaml
+#   3. In Goodnight Phone: Bedroom beacon → Change beacon… → paste the same UUID → Save.
+#   4. Tune the range with tx_power (re-run step 2 after each change), as in README "Tuning the beacon".
+substitutions:
+  beacon_uuid: "PASTE-YOUR-UUIDGEN-OUTPUT-HERE"
+  # ESPHome accepts -12dBm to 9dBm in 3 dB steps. Start at the lowest so the signal stops near the door.
+  tx_power: "-12dBm"
+
+esphome:
+  name: bedroom-beacon
+  # XIAO ESP32-C6: GPIO3 low turns on the RF switch, GPIO14 low picks the built-in antenna.
+  # Without this the radio may barely reach. Drop it (and the outputs below) on other boards.
+  on_boot:
+    priority: 800
+    then:
+      - output.turn_off: rf_switch_enable
+      - output.turn_off: antenna_select
+
+output:
+  - platform: gpio
+    pin: GPIO3
+    id: rf_switch_enable
+  - platform: gpio
+    pin: GPIO14
+    id: antenna_select
+
+esp32:
+  board: esp32-c6-devkitc-1
+  variant: esp32c6
+  framework:
+    type: esp-idf
+
+# Serial logs only. No wifi, api or ota: the board just broadcasts.
+logger:
+
+esp32_ble:
+
+esp32_ble_beacon:
+  type: iBeacon
+  uuid: ${beacon_uuid}
+  major: 1
+  minor: 1
+  min_interval: 300ms
+  max_interval: 500ms
+  tx_power: ${tx_power}
