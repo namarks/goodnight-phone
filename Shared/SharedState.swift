@@ -18,7 +18,9 @@ enum Shared {
         static let inRoom = "inRoom"
         static let isBlocking = "isBlocking"
         static let schedule = "schedule"
-        static let syncedSchedule = "syncedSchedule"
+        // "syncedSchedule" held the start/end pair registered before per-night hours; a new key
+        // re-registers them as per-time wake-ups after the update.
+        static let syncedSchedule = "syncedSchedule2"
         static let beacon = "beacon"
         static let monitoredBeacon = "monitoredBeacon"
         static let hubBoundary = "hubBoundary"
