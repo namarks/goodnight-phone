@@ -48,6 +48,8 @@ targets:
         ITSAppUsesNonExemptEncryption: false
         UIApplicationSceneManifest:
           UIApplicationSupportsMultipleScenes: false
+        # Portrait only; opting out of iPad multitasking is required for App Store upload.
+        UIRequiresFullScreen: true
         UISupportedInterfaceOrientations:
           - UIInterfaceOrientationPortrait
         NSLocationWhenInUseUsageDescription: "Goodnight Phone checks whether your iPhone is near your bedroom beacon so it can block the apps you chose at bedtime. Your location never leaves your phone."
