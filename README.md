@@ -85,7 +85,7 @@ A spare iPad or iPhone can be the beacon (the app calls this a **bedroom hub**; 
 3. On your iPhone, tap **Add beacon…** (or **Change beacon…**), then **Use a bedroom hub**, then **Save**, and allow Bluetooth.
 4. Once it says **Connected**, stand in the bedroom doorway (not next to the spare device) and tap **Set** on **Bedroom boundary** (or **Set boundary here** under Bedroom beacon). It measures for about five seconds. Nothing is blocked until this is set.
 
-Anywhere the signal is stronger than the boundary counts as the bedroom; weaker counts as outside. During bedtime hours, walking in registers within about 10 seconds and leaving within about 30, with the app open or closed; leaving is slower so a weak moment by the bed doesn't lift the block. Like the other settings, the boundary is locked while apps are blocked, so to move it inward, do it outside bedtime hours.
+Anywhere the signal is stronger than the boundary counts as the bedroom; weaker counts as outside. During bedtime hours, walking in registers within about 10 seconds and leaving within about 15, with the app open or closed; leaving is slower so a weak moment by the bed doesn't lift the block. Like the other settings, the boundary is locked while apps are blocked, so to move it inward, do it outside bedtime hours.
 
 For battery use, see [Battery](#battery).
 

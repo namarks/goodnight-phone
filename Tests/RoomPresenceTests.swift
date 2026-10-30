@@ -133,8 +133,8 @@ final class RoomPresenceTests: XCTestCase {
 
     func testDipShorterThanLeaveDwellStaysInRoom() {
         var machine = RoomPresenceStateMachine(inRoom: true, thresholds: thresholds)
-        // 16 s at −65, as if stepping into the hallway for a moment.
-        let readings = Array(repeating: -40, count: 10) + Array(repeating: -65, count: 8) + Array(repeating: -40, count: 15)
+        // 8 s at −65, as if stepping into the hallway for a moment.
+        let readings = Array(repeating: -40, count: 10) + Array(repeating: -65, count: 4) + Array(repeating: -40, count: 15)
         XCTAssertTrue(run(&machine, readings).isEmpty)
         XCTAssertTrue(machine.inRoom)
     }

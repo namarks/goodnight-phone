@@ -39,7 +39,7 @@ enum RoomCalibration {
 struct RoomPresenceStateMachine {
     struct Timing: Equatable {
         var enterDwell: TimeInterval = 6
-        var leaveDwell: TimeInterval = 20
+        var leaveDwell: TimeInterval = 10
         /// Readings older than this (e.g. from before bedtime hours) aren't mixed with new ones.
         var staleAfter: TimeInterval = 10
         /// With no readings at all for this long, you count as out of range.
