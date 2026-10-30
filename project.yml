@@ -1,6 +1,6 @@
 # XcodeGen spec — run ./setup.sh rather than editing the generated .xcodeproj.
 # TEAM_ID and BUNDLE_PREFIX come from the environment (setup.sh supplies them).
-name: LightsOut
+name: GoodnightPhone
 
 options:
   bundleIdPrefix: ${BUNDLE_PREFIX}
@@ -22,7 +22,7 @@ settings:
 
 targets:
   # The app: settings UI + beacon monitoring (CLMonitor).
-  LightsOut:
+  GoodnightPhone:
     type: application
     platform: iOS
     sources:
@@ -30,19 +30,19 @@ targets:
       - path: Shared
     scheme:
       testTargets:
-        - LightsOutTests
+        - GoodnightPhoneTests
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: ${BUNDLE_PREFIX}.lightsout
+        PRODUCT_BUNDLE_IDENTIFIER: ${BUNDLE_PREFIX}.goodnightphone
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
         ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
     info:
       path: Support/App-Info.plist
       properties:
-        CFBundleDisplayName: Lights Out
+        CFBundleDisplayName: Goodnight Phone
         CFBundleShortVersionString: $(MARKETING_VERSION)
         CFBundleVersion: $(CURRENT_PROJECT_VERSION)
-        LightsOutAppGroup: group.${BUNDLE_PREFIX}.lightsout
+        GoodnightPhoneAppGroup: group.${BUNDLE_PREFIX}.goodnightphone
         UILaunchScreen: {}
         # No encryption beyond what iOS provides, so App Store Connect skips the export compliance question.
         ITSAppUsesNonExemptEncryption: false
@@ -50,26 +50,26 @@ targets:
           UIApplicationSupportsMultipleScenes: false
         UISupportedInterfaceOrientations:
           - UIInterfaceOrientationPortrait
-        NSLocationWhenInUseUsageDescription: "Lights Out checks whether your iPhone is near your bedroom beacon so it can block the apps you chose at bedtime. Your location never leaves your phone."
-        NSLocationAlwaysAndWhenInUseUsageDescription: "Choose “Always” so iOS can wake Lights Out when you walk into the bedroom and block your chosen apps, even when the app is closed. Lights Out only learns whether you’re near your beacon, and nothing leaves your phone."
-        NSBluetoothAlwaysUsageDescription: "Lights Out uses Bluetooth to connect your phone to a spare iPad or iPhone standing in as the bedroom beacon, and to tell how close you are to it."
+        NSLocationWhenInUseUsageDescription: "Goodnight Phone checks whether your iPhone is near your bedroom beacon so it can block the apps you chose at bedtime. Your location never leaves your phone."
+        NSLocationAlwaysAndWhenInUseUsageDescription: "Choose “Always” so iOS can wake Goodnight Phone when you walk into the bedroom and block your chosen apps, even when the app is closed. Goodnight Phone only learns whether you’re near your beacon, and nothing leaves your phone."
+        NSBluetoothAlwaysUsageDescription: "Goodnight Phone uses Bluetooth to connect your phone to a spare iPad or iPhone standing in as the bedroom beacon, and to tell how close you are to it."
         # Keeps the connection to the spare-device stand-in alive with the app closed (HubMonitor).
         UIBackgroundModes:
           - bluetooth-central
     entitlements:
-      path: Support/LightsOut.entitlements
+      path: Support/GoodnightPhone.entitlements
       properties:
         com.apple.developer.family-controls: true
         com.apple.security.application-groups:
-          - group.${BUNDLE_PREFIX}.lightsout
+          - group.${BUNDLE_PREFIX}.goodnightphone
     dependencies:
-      - target: LightsOutMonitor
-      - target: LightsOutShield
-      - target: LightsOutShieldAction
+      - target: GoodnightPhoneMonitor
+      - target: GoodnightPhoneShield
+      - target: GoodnightPhoneShieldAction
 
   # Unit tests for the pure room-presence logic. Compiles App/Presence directly instead of
   # hosting the app, so tests don't launch it (Screen Time and Bluetooth don't work in the Simulator).
-  LightsOutTests:
+  GoodnightPhoneTests:
     type: bundle.unit-test
     platform: iOS
     sources:
@@ -77,11 +77,11 @@ targets:
       - path: App/Presence
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: ${BUNDLE_PREFIX}.lightsout.tests
+        PRODUCT_BUNDLE_IDENTIFIER: ${BUNDLE_PREFIX}.goodnightphone.tests
         GENERATE_INFOPLIST_FILE: YES
 
   # Woken at the start/end of bedtime hours to apply or lift the shield.
-  LightsOutMonitor:
+  GoodnightPhoneMonitor:
     type: app-extension
     platform: iOS
     sources:
@@ -89,14 +89,14 @@ targets:
       - path: Shared
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: ${BUNDLE_PREFIX}.lightsout.monitor
+        PRODUCT_BUNDLE_IDENTIFIER: ${BUNDLE_PREFIX}.goodnightphone.monitor
     info:
       path: Support/Monitor-Info.plist
       properties:
-        CFBundleDisplayName: Lights Out Monitor
+        CFBundleDisplayName: Goodnight Phone Monitor
         CFBundleShortVersionString: $(MARKETING_VERSION)
         CFBundleVersion: $(CURRENT_PROJECT_VERSION)
-        LightsOutAppGroup: group.${BUNDLE_PREFIX}.lightsout
+        GoodnightPhoneAppGroup: group.${BUNDLE_PREFIX}.goodnightphone
         NSExtension:
           NSExtensionPointIdentifier: com.apple.deviceactivity.monitor-extension
           NSExtensionPrincipalClass: $(PRODUCT_MODULE_NAME).DeviceActivityMonitorExtension
@@ -105,21 +105,21 @@ targets:
       properties:
         com.apple.developer.family-controls: true
         com.apple.security.application-groups:
-          - group.${BUNDLE_PREFIX}.lightsout
+          - group.${BUNDLE_PREFIX}.goodnightphone
 
   # The custom "Not in the bedroom" screen over blocked apps.
-  LightsOutShield:
+  GoodnightPhoneShield:
     type: app-extension
     platform: iOS
     sources:
       - path: Extensions/Shield
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: ${BUNDLE_PREFIX}.lightsout.shield
+        PRODUCT_BUNDLE_IDENTIFIER: ${BUNDLE_PREFIX}.goodnightphone.shield
     info:
       path: Support/Shield-Info.plist
       properties:
-        CFBundleDisplayName: Lights Out Shield
+        CFBundleDisplayName: Goodnight Phone Shield
         CFBundleShortVersionString: $(MARKETING_VERSION)
         CFBundleVersion: $(CURRENT_PROJECT_VERSION)
         NSExtension:
@@ -131,18 +131,18 @@ targets:
         com.apple.developer.family-controls: true
 
   # Handles the shield's Close button.
-  LightsOutShieldAction:
+  GoodnightPhoneShieldAction:
     type: app-extension
     platform: iOS
     sources:
       - path: Extensions/ShieldAction
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: ${BUNDLE_PREFIX}.lightsout.shieldaction
+        PRODUCT_BUNDLE_IDENTIFIER: ${BUNDLE_PREFIX}.goodnightphone.shieldaction
     info:
       path: Support/ShieldAction-Info.plist
       properties:
-        CFBundleDisplayName: Lights Out Shield Action
+        CFBundleDisplayName: Goodnight Phone Shield Action
         CFBundleShortVersionString: $(MARKETING_VERSION)
         CFBundleVersion: $(CURRENT_PROJECT_VERSION)
         NSExtension:

@@ -2,7 +2,7 @@ import DeviceActivity
 import Foundation
 
 extension DeviceActivityName {
-    static let testBlock = Self("lightsout.testBlock")
+    static let testBlock = Self("goodnightphone.testBlock")
 }
 
 /// "Try it now": blocks the chosen apps for a couple of minutes without a beacon,
@@ -35,7 +35,7 @@ enum TestBlock {
         do {
             try center.startMonitoring(.testBlock, during: window)
         } catch {
-            // The block still lifts the next time Lights Out opens.
+            // The block still lifts the next time Goodnight Phone opens.
             Shared.log("Couldn't schedule the end of the test: \(error.localizedDescription)")
         }
         Blocker.refresh(reason: "test started")

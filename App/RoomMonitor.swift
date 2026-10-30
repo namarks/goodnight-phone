@@ -10,7 +10,7 @@ import Foundation
 final class RoomMonitor {
     static let shared = RoomMonitor()
 
-    private static let monitorName = "LightsOutBedroom"
+    private static let monitorName = "GoodnightPhoneBedroom"
     static let conditionID = "bedroom"
 
     private var monitor: CLMonitor?

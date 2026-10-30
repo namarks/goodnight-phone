@@ -1,10 +1,10 @@
 import SwiftUI
 
 enum AppLinks {
-    static let privacyPolicy = URL(string: "https://github.com/namarks/lights-out/blob/main/PRIVACY.md")!
+    static let privacyPolicy = URL(string: "https://github.com/namarks/goodnight-phone/blob/main/PRIVACY.md")!
 }
 
-/// First-launch walkthrough: what Lights Out does and what it will ask for.
+/// First-launch walkthrough: what Goodnight Phone does and what it will ask for.
 /// Permissions themselves are requested from the setup checklist afterwards.
 struct OnboardingView: View {
     let onFinish: () -> Void
@@ -14,17 +14,17 @@ struct OnboardingView: View {
         OnboardingPage(
             icon: "moon.zzz.fill",
             title: "Put the phone down at bedtime",
-            text: "Lights Out blocks the apps you choose while your iPhone is in the bedroom during bedtime hours. Walk out of the room and they unlock. There's nothing to tap."
+            text: "Goodnight Phone blocks the apps you choose while your iPhone is in the bedroom during bedtime hours. Walk out of the room and they unlock. There's nothing to tap."
         ),
         OnboardingPage(
             icon: "dot.radiowaves.left.and.right",
             title: "Mark the bedroom",
-            text: "Put a small Bluetooth beacon by the bed (about $20 online), or use a spare iPad or iPhone running Lights Out. Your iPhone notices when it's near."
+            text: "Put a small Bluetooth beacon by the bed (about $20 online), or use a spare iPad or iPhone running Goodnight Phone. Your iPhone notices when it's near."
         ),
         OnboardingPage(
             icon: "lock.shield.fill",
             title: "Private, and hard to skip",
-            text: "Lights Out needs Screen Time access to block apps and Location so iOS can wake it when you walk in. Nothing leaves your phone. While apps are blocked, settings lock too. In an emergency, turn Lights Out off in Settings → Screen Time."
+            text: "Goodnight Phone needs Screen Time access to block apps and Location so iOS can wake it when you walk in. Nothing leaves your phone. While apps are blocked, settings lock too. In an emergency, turn Goodnight Phone off in Settings → Screen Time."
         ),
     ]
 
@@ -48,7 +48,7 @@ struct OnboardingView: View {
                         withAnimation { page += 1 }
                     }
                 } label: {
-                    Text(isLastPage ? "Set up Lights Out" : "Next")
+                    Text(isLastPage ? "Set up Goodnight Phone" : "Next")
                         .frame(maxWidth: .infinity)
                 }
                 .buttonStyle(.borderedProminent)

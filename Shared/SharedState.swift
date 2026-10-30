@@ -6,8 +6,8 @@ import FamilyControls
 enum Shared {
     /// The App Group ID is injected into each target's Info.plist by project.yml.
     static let groupID: String = {
-        let id = Bundle.main.object(forInfoDictionaryKey: "LightsOutAppGroup") as? String ?? ""
-        assert(!id.isEmpty, "LightsOutAppGroup is missing from Info.plist — regenerate the project with setup.sh")
+        let id = Bundle.main.object(forInfoDictionaryKey: "GoodnightPhoneAppGroup") as? String ?? ""
+        assert(!id.isEmpty, "GoodnightPhoneAppGroup is missing from Info.plist — regenerate the project with setup.sh")
         return id
     }()
 

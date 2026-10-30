@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Generates LightsOut.xcodeproj for your Apple developer team and opens it in Xcode.
+# Generates GoodnightPhone.xcodeproj for your Apple developer team and opens it in Xcode.
 # Safe to re-run any time (e.g. after pulling changes); your answers are remembered.
 set -euo pipefail
 cd "$(dirname "$0")"
@@ -16,7 +16,9 @@ if ! command -v xcodegen >/dev/null 2>&1; then
 fi
 
 # --- Your team + bundle ID --------------------------------------------------
-ENV_FILE=.lightsout.env
+ENV_FILE=.goodnightphone.env
+# Carry over answers saved before the rename from Lights Out.
+if [ ! -f "$ENV_FILE" ] && [ -f .lightsout.env ]; then mv .lightsout.env "$ENV_FILE"; fi
 if [ -f "$ENV_FILE" ]; then
   # shellcheck disable=SC1090
   source "$ENV_FILE"
@@ -56,12 +58,12 @@ TEAM_ID="$TEAM_ID" BUNDLE_PREFIX="$BUNDLE_PREFIX" xcodegen generate --spec proje
 
 cat <<EOF
 
-✅ LightsOut.xcodeproj generated
-   App ID:    $BUNDLE_PREFIX.lightsout
-   App Group: group.$BUNDLE_PREFIX.lightsout
+✅ GoodnightPhone.xcodeproj generated
+   App ID:    $BUNDLE_PREFIX.goodnightphone
+   App Group: group.$BUNDLE_PREFIX.goodnightphone
 
 Next: plug in your iPhone, pick it as the run destination, and press ⌘R.
 (First time on a device: Settings → Privacy & Security → Developer Mode → On.)
 EOF
 
-open LightsOut.xcodeproj
+open GoodnightPhone.xcodeproj

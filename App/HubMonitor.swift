@@ -1,7 +1,7 @@
 import CoreBluetooth
 import Foundation
 
-/// Watches for the stand-in device (a spare iPad or iPhone running Lights Out) over a Bluetooth
+/// Watches for the stand-in device (a spare iPad or iPhone running Goodnight Phone) over a Bluetooth
 /// connection instead of as an iBeacon. Like Brick Night, "in the bedroom" means the signal is
 /// stronger than a boundary you set standing at the bedroom door, so the zone can stop short of
 /// the kitchen.
@@ -11,7 +11,7 @@ import Foundation
 /// closed; outside bedtime hours it stays quiet so the phone isn't woken all day. While the app
 /// is open it reads the signal every second itself (live Signal row, setting the boundary).
 /// iOS relaunches the app for these events via state restoration, so `sync()` runs on every
-/// launch. A force-quit stops that until Lights Out is opened again.
+/// launch. A force-quit stops that until Goodnight Phone is opened again.
 ///
 /// Whenever the phone can't hear the stand-in (out of range, its app closed, Bluetooth off), you
 /// count as outside.
@@ -32,7 +32,7 @@ final class HubMonitor: NSObject, ObservableObject, CBCentralManagerDelegate, CB
     }
     @Published private(set) var isCalibrating = false
 
-    private static let restoreID = "LightsOutHub"
+    private static let restoreID = "GoodnightPhoneHub"
 
     private var central: CBCentralManager?
     private var hub: CBPeripheral?
@@ -52,7 +52,7 @@ final class HubMonitor: NSObject, ObservableObject, CBCentralManagerDelegate, CB
         switch link {
         case .off: return "Off"
         case .bluetoothOff: return "Turn on Bluetooth"
-        case .notAllowed: return "Bluetooth off for Lights Out — open Settings"
+        case .notAllowed: return "Bluetooth off for Goodnight Phone — open Settings"
         case .searching: return "Looking for it…"
         case .connected: return isListening ? "Connected" : "Connected, but it isn't broadcasting"
         }
@@ -282,7 +282,7 @@ final class HubMonitor: NSObject, ObservableObject, CBCentralManagerDelegate, CB
             case .unauthorized:
                 link = .notAllowed
                 forgetReadings()
-                goOutside(reason: "Bluetooth isn't allowed for Lights Out")
+                goOutside(reason: "Bluetooth isn't allowed for Goodnight Phone")
             default:
                 break
             }
