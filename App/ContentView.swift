@@ -33,7 +33,8 @@ struct ContentView: View {
                         setupDone: setupDone,
                         isBlocking: model.isBlocking,
                         inRoom: model.inRoom,
-                        hours: model.schedule.summary,
+                        anyTime: !model.schedule.limitToHours,
+                        tonight: model.schedule.currentNight(),
                         testEndsAt: model.testEndsAt
                     )
                 }
@@ -181,12 +182,15 @@ struct ContentView: View {
             if model.schedule.limitToHours {
                 DatePicker("Starts", selection: timeBinding(\.startMinutes), displayedComponents: .hourAndMinute)
                 DatePicker("Ends", selection: timeBinding(\.endMinutes), displayedComponents: .hourAndMinute)
+                NavigationLink { NightsView() } label: {
+                    LabeledContent("Each night", value: nightsSummary)
+                }
             }
         } header: {
             Text("When")
         } footer: {
             Text(model.schedule.limitToHours
-                 ? "Blocking starts at bedtime even if you're already in bed, and lifts in the morning."
+                 ? "Blocking starts at bedtime even if you're already in bed, and lifts in the morning. Give a night its own hours, or take it off, under Each night."
                  : "Apps are blocked any time you're in the bedroom.")
         }
         .disabled(model.isLocked)
@@ -296,6 +300,16 @@ struct ContentView: View {
         showingPicker = true
     }
 
+    /// "Same hours", "Fri and Sat off", or "Varies".
+    private var nightsSummary: String {
+        let nights = model.schedule.nights
+        if !model.schedule.variesByNight { return "Same hours" }
+        if nights.contains(where: { $0 != .usual && $0 != .off }) { return "Varies" }
+        if !nights.contains(.usual) { return "All off" }
+        let off = Weekdays.inOrder.filter { nights[$0 - 1] == .off }
+        return off.map { Calendar.current.shortWeekdaySymbols[$0 - 1] }.formatted(.list(type: .and)) + " off"
+    }
+
     private func scheduleBinding(_ keyPath: WritableKeyPath<BedtimeSchedule, Bool>) -> Binding<Bool> {
         Binding(
             get: { model.schedule[keyPath: keyPath] },
@@ -325,7 +339,9 @@ private struct StatusCard: View {
     let setupDone: Bool
     let isBlocking: Bool
     let inRoom: Bool
-    let hours: String
+    let anyTime: Bool
+    /// Tonight's hours (or last night's, until they end); nil on a night off.
+    let tonight: String?
     let testEndsAt: Date?
 
     var body: some View {
@@ -367,10 +383,12 @@ private struct StatusCard: View {
         }
         if isBlocking { return "They unlock when you leave the room." }
         if !setupDone { return "A few permissions and a beacon, then it runs on its own." }
-        if inRoom { return "Outside bedtime hours (\(hours)), so nothing's blocked." }
-        return hours == "Any time"
-            ? "Apps block whenever you walk in."
-            : "Apps block when you walk in, \(hours)."
+        if anyTime { return "Apps block whenever you walk in." }
+        guard let tonight else {
+            return inRoom ? "Tonight's a night off, so nothing's blocked." : "Tonight's a night off, so nothing will block."
+        }
+        if inRoom { return "Outside bedtime hours (\(tonight)), so nothing's blocked." }
+        return "Apps block when you walk in, \(tonight)."
     }
 
     private var colors: [Color] {
@@ -504,6 +522,128 @@ private struct BeaconEditor: View {
                 }
             }
         }
+    }
+}
+
+// MARK: - Each night
+
+private enum Weekdays {
+    /// Calendar weekdays (1 = Sunday), starting on the locale's first day of the week.
+    static var inOrder: [Int] {
+        let first = Calendar.current.firstWeekday
+        return (0..<7).map { (first - 1 + $0) % 7 + 1 }
+    }
+}
+
+private struct NightsView: View {
+    @EnvironmentObject private var model: AppModel
+
+    var body: some View {
+        Form {
+            Section {
+                ForEach(Weekdays.inOrder, id: \.self) { weekday in
+                    NavigationLink { NightEditor(weekday: weekday) } label: {
+                        LabeledContent(Calendar.current.weekdaySymbols[weekday - 1], value: hours(weekday))
+                    }
+                }
+            } footer: {
+                Text("A night runs from its start into the next morning: Friday is Friday evening to Saturday morning. Nights on usual hours follow Starts and Ends.")
+            }
+        }
+        .navigationTitle("Each night")
+        .navigationBarTitleDisplayMode(.inline)
+        .disabled(model.isLocked)
+    }
+
+    private func hours(_ weekday: Int) -> String {
+        guard let hours = model.schedule.hours(onWeekday: weekday) else { return "Off" }
+        return BedtimeSchedule.summary(start: hours.start, end: hours.end)
+    }
+}
+
+private struct NightEditor: View {
+    @EnvironmentObject private var model: AppModel
+    /// Calendar weekday, 1 = Sunday.
+    let weekday: Int
+
+    private enum Choice: Hashable { case usual, own, off }
+
+    private var night: BedtimeSchedule.Night { model.schedule.nights[weekday - 1] }
+    private var dayName: String { Calendar.current.weekdaySymbols[weekday - 1] }
+    private var nextDayName: String { Calendar.current.weekdaySymbols[weekday % 7] }
+
+    var body: some View {
+        Form {
+            Section {
+                Picker("Hours", selection: choiceBinding) {
+                    Text("Usual hours").tag(Choice.usual)
+                    Text("Different hours").tag(Choice.own)
+                    Text("Off").tag(Choice.off)
+                }
+                .pickerStyle(.inline)
+                .labelsHidden()
+            } footer: {
+                switch night {
+                case .usual:
+                    Text("\(BedtimeSchedule.summary(start: model.schedule.startMinutes, end: model.schedule.endMinutes)), like the other nights on usual hours.")
+                case .hours:
+                    Text("Only \(dayName) night. The usual hours stay as they are.")
+                case .off:
+                    Text("Nothing is blocked from \(dayName) evening through \(nextDayName) morning.")
+                }
+            }
+            if case .hours = night {
+                Section {
+                    DatePicker("Starts", selection: timeBinding(start: true), displayedComponents: .hourAndMinute)
+                    DatePicker("Ends", selection: timeBinding(start: false), displayedComponents: .hourAndMinute)
+                }
+            }
+        }
+        .navigationTitle(dayName)
+        .navigationBarTitleDisplayMode(.inline)
+        .disabled(model.isLocked)
+    }
+
+    private var choiceBinding: Binding<Choice> {
+        Binding(
+            get: {
+                switch night {
+                case .usual: return .usual
+                case .hours: return .own
+                case .off: return .off
+                }
+            },
+            set: { choice in
+                switch choice {
+                case .usual: save(.usual)
+                case .off: save(.off)
+                case .own:
+                    if case .hours = night { return }
+                    // Start from the usual hours, ready to adjust.
+                    save(.hours(start: model.schedule.startMinutes, end: model.schedule.endMinutes))
+                }
+            }
+        )
+    }
+
+    private func timeBinding(start: Bool) -> Binding<Date> {
+        Binding(
+            get: {
+                guard case .hours(let s, let e) = night else { return .now }
+                return BedtimeSchedule.date(fromMinutes: start ? s : e)
+            },
+            set: { newValue in
+                guard case .hours(let s, let e) = night else { return }
+                let minutes = BedtimeSchedule.minutes(from: newValue)
+                save(start ? .hours(start: minutes, end: e) : .hours(start: s, end: minutes))
+            }
+        )
+    }
+
+    private func save(_ newValue: BedtimeSchedule.Night) {
+        var schedule = model.schedule
+        schedule.nights[weekday - 1] = newValue
+        model.saveSchedule(schedule)
     }
 }
 

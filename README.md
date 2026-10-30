@@ -18,7 +18,7 @@ A personal Brick Night: your chosen apps lock automatically when your iPhone is 
    - **Apps to block**: pick Instagram and anything else.
    - **Bedroom beacon**: paste the beacon's UUID.
 4. To see it work before the beacon is set up, tap **Try it now → Block these apps for 2 minutes**, then open a blocked app. Like the real thing, the test can't be cancelled.
-5. Set your bedtime hours (default 9 PM – 7 AM) or turn them off to block any time you're in the room.
+5. Set your bedtime hours (default 9 PM – 7 AM) or turn them off to block any time you're in the room. Under **Each night** you can give any night its own hours, or take it off (say, Friday and Saturday). A night belongs to the day it starts: Friday night runs from Friday evening into Saturday morning.
 
 ## Tuning the beacon (the part that makes it feel right)
 
@@ -54,7 +54,8 @@ Bedtime starts/ends ──► DeviceActivity wakes the Monitor extension ──�
 |---|---|
 | `Shared/Blocker.swift` | The single decision: blocks when you're in the room, it's bedtime and apps are selected; clears the shield otherwise. Safe to call any time. |
 | `Shared/SharedState.swift` | App Group storage shared by the app and the Monitor extension: selection, schedule, beacon, in-room flag, activity log. |
-| `Shared/BedtimeActivities.swift` | Registers short DeviceActivity windows at the start and end of bedtime to wake the extension. iOS delivers these while the phone is in use, so if it's asleep on the nightstand at 9 PM, blocking turns on the next time you pick it up. |
+| `Shared/BedtimeSchedule.swift` | Bedtime hours: usual hours, plus per-night hours or nights off. Unit-tested in `Tests/`. |
+| `Shared/BedtimeActivities.swift` | Registers a short daily DeviceActivity window at every start and end time across the week to wake the extension. iOS delivers these while the phone is in use, so if it's asleep on the nightstand at 9 PM, blocking turns on the next time you pick it up. |
 | `App/RoomMonitor.swift` | Watches the beacon with `CLMonitor`, and on iOS 18+ holds a `CLServiceSession` once "Always" is granted. It's started on every launch, which is how iOS delivers enter/exit events in the background. |
 | `App/ContentView.swift` | Status card, setup checklist, apps, hours, beacon, activity log. |
 | `App/HubMonitor.swift` | With a spare iPad or iPhone as the beacon: stays connected to it over Bluetooth (also with the app closed), reads the signal on each heartbeat, and decides in or out against the boundary you set at the bedroom door. |

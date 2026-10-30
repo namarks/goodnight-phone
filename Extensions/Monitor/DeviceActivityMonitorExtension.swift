@@ -15,11 +15,9 @@ final class DeviceActivityMonitorExtension: DeviceActivityMonitor {
     }
 
     private func reason(for activity: DeviceActivityName) -> String {
-        switch activity {
-        case .bedtimeStart: return "bedtime started"
-        case .bedtimeEnd: return "bedtime ended"
-        case .testBlock: return "test ended"
-        default: return "schedule check"
-        }
+        if activity == .testBlock { return "test ended" }
+        // Each wake-up is shared by every night with that time, so ask the clock which it was.
+        if activity.isBedtime { return Shared.schedule.contains(.now) ? "bedtime started" : "bedtime ended" }
+        return "schedule check"
     }
 }
