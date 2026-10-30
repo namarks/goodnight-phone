@@ -180,17 +180,18 @@ struct ContentView: View {
         Section {
             Toggle("Only during bedtime hours", isOn: scheduleBinding(\.limitToHours))
             if model.schedule.limitToHours {
+                NightToggles()
                 DatePicker("Starts", selection: timeBinding(\.startMinutes), displayedComponents: .hourAndMinute)
                 DatePicker("Ends", selection: timeBinding(\.endMinutes), displayedComponents: .hourAndMinute)
                 NavigationLink { NightsView() } label: {
-                    LabeledContent("Each night", value: nightsSummary)
+                    LabeledContent("Hours by night", value: model.schedule.nightsSummary)
                 }
             }
         } header: {
             Text("When")
         } footer: {
             Text(model.schedule.limitToHours
-                 ? "Blocking starts at bedtime even if you're already in bed, and lifts in the morning. Give a night its own hours, or take it off, under Each night."
+                 ? "Tap a day to take that night off. A night runs from its start into the next morning, so Friday is Friday evening to Saturday morning. Blocking starts at bedtime even if you're already in bed."
                  : "Apps are blocked any time you're in the bedroom.")
         }
         .disabled(model.isLocked)
@@ -298,16 +299,6 @@ struct ContentView: View {
     private func openPicker() {
         pickerSelection = model.selection
         showingPicker = true
-    }
-
-    /// "Same hours", "Fri and Sat off", or "Varies".
-    private var nightsSummary: String {
-        let nights = model.schedule.nights
-        if !model.schedule.variesByNight { return "Same hours" }
-        if nights.contains(where: { $0 != .usual && $0 != .off }) { return "Varies" }
-        if !nights.contains(.usual) { return "All off" }
-        let off = Weekdays.inOrder.filter { nights[$0 - 1] == .off }
-        return off.map { Calendar.current.shortWeekdaySymbols[$0 - 1] }.formatted(.list(type: .and)) + " off"
     }
 
     private func scheduleBinding(_ keyPath: WritableKeyPath<BedtimeSchedule, Bool>) -> Binding<Bool> {
@@ -525,13 +516,45 @@ private struct BeaconEditor: View {
     }
 }
 
-// MARK: - Each night
+// MARK: - Nights
 
 private enum Weekdays {
     /// Calendar weekdays (1 = Sunday), starting on the locale's first day of the week.
     static var inOrder: [Int] {
         let first = Calendar.current.firstWeekday
         return (0..<7).map { (first - 1 + $0) % 7 + 1 }
+    }
+}
+
+/// One circle per night, like the Clock app's alarm days: filled = blocking that night.
+private struct NightToggles: View {
+    @EnvironmentObject private var model: AppModel
+
+    var body: some View {
+        HStack {
+            ForEach(Weekdays.inOrder, id: \.self) { weekday in
+                let isOn = model.schedule.hours(onWeekday: weekday) != nil
+                Button {
+                    var schedule = model.schedule
+                    // Back on uses the usual hours; a night's own hours are set under Hours by night.
+                    schedule.nights[weekday - 1] = isOn ? .off : .usual
+                    model.saveSchedule(schedule)
+                } label: {
+                    Text(Calendar.current.veryShortWeekdaySymbols[weekday - 1])
+                        .font(.subheadline.weight(.semibold))
+                        .frame(width: 36, height: 36)
+                        .foregroundStyle(isOn ? Color.white : Color.primary)
+                        .background(Circle().fill(isOn ? Color.accentColor : Color(.tertiarySystemFill)))
+                }
+                // Borderless, or a tap anywhere in the row would press every button.
+                .buttonStyle(.borderless)
+                .frame(maxWidth: .infinity)
+                .accessibilityLabel("\(Calendar.current.weekdaySymbols[weekday - 1]) night")
+                .accessibilityValue(isOn ? "On" : "Off")
+                .accessibilityAddTraits(isOn ? .isSelected : [])
+            }
+        }
+        .padding(.vertical, 4)
     }
 }
 
@@ -547,10 +570,10 @@ private struct NightsView: View {
                     }
                 }
             } footer: {
-                Text("A night runs from its start into the next morning: Friday is Friday evening to Saturday morning. Nights on usual hours follow Starts and Ends.")
+                Text("Give a night its own hours, or take it off. Nights on usual hours follow Starts and Ends.")
             }
         }
-        .navigationTitle("Each night")
+        .navigationTitle("Hours by night")
         .navigationBarTitleDisplayMode(.inline)
         .disabled(model.isLocked)
     }

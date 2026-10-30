@@ -18,7 +18,7 @@ A personal Brick Night: your chosen apps lock automatically when your iPhone is 
    - **Apps to block**: pick Instagram and anything else.
    - **Bedroom beacon**: paste the beacon's UUID.
 4. To see it work before the beacon is set up, tap **Try it now → Block these apps for 2 minutes**, then open a blocked app. Like the real thing, the test can't be cancelled.
-5. Set your bedtime hours (default 9 PM – 7 AM) or turn them off to block any time you're in the room. Under **Each night** you can give any night its own hours, or take it off (say, Friday and Saturday). A night belongs to the day it starts: Friday night runs from Friday evening into Saturday morning.
+5. Set your bedtime hours (default 9 PM – 7 AM) or turn them off to block any time you're in the room. Tap a day's circle to take that night off (say, Friday and Saturday), and use **Hours by night** to give a night its own hours. A night belongs to the day it starts: Friday night runs from Friday evening into Saturday morning.
 
 ## Tuning the beacon (the part that makes it feel right)
 
