@@ -1,0 +1,166 @@
+# Turns an ESP32 board into an always-on stand-in for the "spare iPad or iPhone" bedroom beacon.
+# It speaks the same Bluetooth protocol as App/BeaconBroadcaster.swift, so the app needs no
+# changes: on your iPhone choose Bedroom beacon → Change beacon… → Use a spare iPad or iPhone,
+# then set the boundary standing in the bedroom doorway.
+#
+# Unlike the iPad it needs no app open on a screen. Wi-Fi is only for the clock (heartbeats go out
+# during bedtime hours only, like the iPad) and for over-the-air updates.
+#
+# Tested target: Seeed Studio XIAO ESP32-C6. Other ESP32 boards: change the esp32 block and drop
+# the antenna outputs.
+#
+#   1. Next to this file, create secrets.yaml (never commit it) with:
+#        wifi_ssid: "your network"
+#        wifi_password: "your password"
+#        ota_password: "anything"
+#   2. Set timezone below to the phone's time zone.
+#   3. Plug the board into your Mac and run: esphome run hardware/esp32-hub.yaml
+#      Later updates go over Wi-Fi with the same command.
+#
+# Protocol (see BeaconBroadcaster): primary service = BeaconConfig.standInUUID, advertised.
+# Heartbeat characteristic: notify, value 0x01 every 2 s during the phone's bedtime hours, one 0x00
+# when they end. Schedule characteristic: the phone writes its PhoneHours JSON
+# ({"schedule": BedtimeSchedule, "timeZone": "..."}). This board keeps one schedule (the last
+# written) for every connected phone, and evaluates it in `timezone` below, not the JSON's zone.
+substitutions:
+  timezone: "America/Los_Angeles"
+
+esphome:
+  name: bedroom-hub
+  # XIAO ESP32-C6: GPIO3 low turns on the RF switch, GPIO14 low picks the built-in antenna.
+  on_boot:
+    priority: 800
+    then:
+      - output.turn_off: rf_switch_enable
+      - output.turn_off: antenna_select
+
+esp32:
+  board: esp32-c6-devkitc-1
+  variant: esp32c6
+  framework:
+    type: esp-idf
+
+output:
+  - platform: gpio
+    pin: GPIO3
+    id: rf_switch_enable
+  - platform: gpio
+    pin: GPIO14
+    id: antenna_select
+
+logger:
+
+wifi:
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
+
+ota:
+  - platform: esphome
+    password: !secret ota_password
+
+time:
+  - platform: sntp
+    id: clock
+    timezone: ${timezone}
+
+json:
+
+esp32_ble:
+
+esp32_ble_server:
+  manufacturer: "Goodnight Phone"
+  services:
+    - uuid: E6B2E125-B543-4BA4-8D19-B68DBA9F147C
+      advertise: true
+      characteristics:
+        - id: heartbeat
+          uuid: 17FEA0BC-C577-41FE-B8A1-9604CDE1C469
+          notify: true
+          value:
+            data: [0]
+        - id: schedule
+          uuid: 8C4D4E0A-2F5B-4B8E-9C1D-3A6F7E2B5D90
+          write: true
+          on_write:
+            then:
+              - lambda: |-
+                  std::string text(x.begin(), x.end());
+                  bool ok = json::parse_json(text, [](JsonObject root) -> bool {
+                    JsonObject s = root["schedule"];
+                    if (s.isNull()) return false;
+                    id(limit_to_hours) = s["limitToHours"] | true;
+                    int usual_start = s["startMinutes"] | 1260;
+                    int usual_end = s["endMinutes"] | 420;
+                    JsonArray nights = s["nights"];
+                    // Per weekday (Sunday first): start, end, or -1 when the night is off.
+                    for (int d = 0; d < 7; d++) {
+                      int start = usual_start, end = usual_end;
+                      if (nights.size() == 7) {
+                        JsonObject night = nights[d];
+                        if (night.containsKey("off")) { start = -1; end = -1; }
+                        else if (night.containsKey("hours")) {
+                          start = night["hours"]["start"] | usual_start;
+                          end = night["hours"]["end"] | usual_end;
+                        }
+                      }
+                      id(night_hours)[d * 2] = start;
+                      id(night_hours)[d * 2 + 1] = end;
+                    }
+                    return true;
+                  });
+                  id(have_schedule) = ok;
+                  ESP_LOGI("hub", "Schedule %s (%d bytes)", ok ? "received" : "unreadable", (int) x.size());
+
+globals:
+  - id: have_schedule
+    type: bool
+    initial_value: "false"
+  - id: limit_to_hours
+    type: bool
+    initial_value: "true"
+  - id: night_hours
+    type: std::array<int, 14>
+    initial_value: "{}"
+  - id: was_awake
+    type: bool
+    initial_value: "false"
+
+script:
+  # Port of BedtimeSchedule.contains: a night belongs to the day it starts on.
+  - id: send_heartbeat
+    then:
+      - lambda: |-
+          bool awake = true;   // like the iPad: no schedule yet (or no clock yet) means beat
+          auto now = id(clock).now();
+          if (id(have_schedule) && id(limit_to_hours) && now.is_valid()) {
+            int minutes = now.hour * 60 + now.minute;
+            int today = now.day_of_week - 1;   // ESPHome: 1 = Sunday
+            auto length = [](int start, int end) {
+              int len = ((end - start) % 1440 + 1440) % 1440;
+              return len == 0 ? 1440 : len;
+            };
+            auto &h = id(night_hours);
+            int yesterday = (today + 6) % 7;
+            awake = false;
+            if (h[yesterday * 2] >= 0) {
+              int since = minutes + 1440 - h[yesterday * 2];
+              if (since < length(h[yesterday * 2], h[yesterday * 2 + 1])) awake = true;
+            }
+            if (!awake && h[today * 2] >= 0) {
+              int start = h[today * 2];
+              awake = minutes >= start && minutes - start < length(start, h[today * 2 + 1]);
+            }
+          }
+          if (awake) {
+            id(heartbeat).set_value(std::vector<uint8_t>{1});
+            id(heartbeat).notify();
+          } else if (id(was_awake)) {
+            id(heartbeat).set_value(std::vector<uint8_t>{0});
+            id(heartbeat).notify();
+          }
+          id(was_awake) = awake;
+
+interval:
+  - interval: 2s
+    then:
+      - script.execute: send_heartbeat
