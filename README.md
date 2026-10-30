@@ -6,7 +6,7 @@ A personal Brick Night: your chosen apps lock automatically when your iPhone is 
 
 - A Mac with Xcode and a **paid** Apple Developer account ($99/year). Free accounts (Personal Team) generally can't sign the Family Controls capability this needs.
 - An iPhone on iOS 17 or later.
-- **An iBeacon with adjustable transmit power**, roughly $15–25 (Blue Charm, Minew and Kontakt.io all sell them). You'll need its UUID, which is on the box or in the vendor's app. An ESP32 board broadcasting iBeacon over USB power also works. To test before it arrives, a spare iPad or iPhone can stand in (see [No beacon yet?](#no-beacon-yet)).
+- **An iBeacon with adjustable transmit power**, roughly $15–25. We recommend the [Blue Charm BC-U1](https://www.amazon.com/dp/B09FYNK94F) (about $19): it runs off any USB-A charger, so there's no battery to die and quietly end blocking, and its power goes down to −40 dBm. The app's beacon screen links to it and fills in its factory UUID with one tap; change settings in the free KBeaconPro app (default password is sixteen zeros, and disconnect when you're done, because it doesn't broadcast while connected). Any other iBeacon works too (Minew and Kontakt.io sell them); you'll need its UUID, which is on the box or in the vendor's app. An ESP32 board broadcasting iBeacon over USB power also works. To test before it arrives, a spare iPad or iPhone can stand in (see [No beacon yet?](#no-beacon-yet)).
 
 ## Setup (about 10 minutes)
 

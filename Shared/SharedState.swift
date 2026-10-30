@@ -163,6 +163,10 @@ struct BeaconConfig: Codable, Equatable {
     static let standInUUID = UUID(uuidString: "E6B2E125-B543-4BA4-8D19-B68DBA9F147C")!
     static let standIn = BeaconConfig(uuid: standInUUID.uuidString)
 
+    /// Factory UUID of Blue Charm beacons, including the recommended BC-U1 ("BlueCharmBeacons"
+    /// in ASCII). It isn't printed on the box, so the editor offers it as a one-tap fill.
+    static let blueCharmUUID = "426C7565-4368-6172-6D42-6561636F6E73"
+
     /// The stand-in is watched over a Bluetooth connection (HubMonitor), not as an iBeacon.
     var isStandIn: Bool { uuid == Self.standIn.uuid }
 }

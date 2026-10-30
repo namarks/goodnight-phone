@@ -462,13 +462,21 @@ private struct BeaconEditor: View {
                         .font(.body.monospaced())
                         .textInputAutocapitalization(.characters)
                         .autocorrectionDisabled()
+                    Button("Use the recommended beacon's UUID") {
+                        uuid = BeaconConfig.blueCharmUUID
+                        major = ""
+                        minor = ""
+                    }
                 } header: {
                     Text("Beacon UUID")
                 } footer: {
-                    Text("It's on the box or in the beacon's setup app.")
+                    Text("It's on the box or in the beacon's setup app. The recommended Blue Charm beacon ships with the UUID above, so one tap fills it in.")
                 }
 
                 Section {
+                    Link(destination: AppLinks.recommendedBeacon) {
+                        Label("Get the recommended beacon (about $19)", systemImage: "cart")
+                    }
                     Button("Use a spare iPad or iPhone") {
                         uuid = BeaconConfig.standIn.uuid
                         major = ""
@@ -477,7 +485,7 @@ private struct BeaconEditor: View {
                 } header: {
                     Text("No beacon yet?")
                 } footer: {
-                    Text("Your phone connects to a spare iPad or iPhone running Goodnight Phone, and you set where the bedroom ends by signal strength. On the spare device, open Goodnight Phone and turn on Broadcast as bedroom beacon.")
+                    Text("The Blue Charm BC-U1 plugs into any USB charger, so there's no battery to run out. Lower its transmit power in the free KBeaconPro app if your iPhone still sees it outside the bedroom.\n\nOr, to start tonight, your phone connects to a spare iPad or iPhone running Goodnight Phone, and you set where the bedroom ends by signal strength. On the spare device, open Goodnight Phone and turn on Broadcast as bedroom beacon.")
                 }
 
                 Section {
