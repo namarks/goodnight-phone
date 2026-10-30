@@ -57,7 +57,11 @@ struct ContentView: View {
                 if !isShowing { model.saveSelection(pickerSelection) }
             }
             .sheet(isPresented: $editingBeacon) {
-                BeaconEditor(current: model.beacon) { model.saveBeacon($0) }
+                BeaconEditor(
+                    current: model.beacon,
+                    onSave: { model.saveBeacon($0) },
+                    onSetUpBlueCharm: { model.saveBlueCharm($0) }
+                )
             }
             .task {
                 signal.watch(model.beacon)
@@ -220,6 +224,9 @@ struct ContentView: View {
                             Image(systemName: "cellularbars", variableValue: signal.strength)
                         }
                     }
+                    if let pairing = model.blueCharm {
+                        BlueCharmRange(pairing: pairing)
+                    }
                 }
             }
             Button(model.beacon == nil ? "Add beacon…" : "Change beacon…") { editingBeacon = true }
@@ -229,6 +236,8 @@ struct ContentView: View {
         } footer: {
             Text(usesStandIn
                  ? "Stronger than the boundary counts as in the bedroom. Set it standing in the bedroom doorway, not next to the spare device; anywhere weaker, like the kitchen, counts as outside. During bedtime hours, walking in registers within about 10 seconds and leaving within about 30, even with the app closed, so a weak moment by the bed doesn't lift the block."
+                 : model.blueCharm != nil
+                 ? "Signal is live while the app is open. Blocking follows Status, and iOS takes about 30 seconds to register that you've left. If it still says “In the bedroom” after you step out of the room, tap Shorter; if it says “Outside” by the bed, tap Longer."
                  : "Signal is live while the app is open. Blocking follows Status, and iOS takes about 30 seconds to register that you've left. If it still says “In the bedroom” after you step out of the room, turn the beacon's transmit power down.")
         }
     }
@@ -427,15 +436,22 @@ private struct BeaconEditor: View {
     @State private var uuid: String
     @State private var major: String
     @State private var minor: String
+    @ObservedObject private var blueCharm = BlueCharm.shared
     private let hadBeacon: Bool
     private let onSave: (BeaconConfig?) -> Void
+    private let onSetUpBlueCharm: (BlueCharmPairing) -> Void
 
-    init(current: BeaconConfig?, onSave: @escaping (BeaconConfig?) -> Void) {
+    init(
+        current: BeaconConfig?,
+        onSave: @escaping (BeaconConfig?) -> Void,
+        onSetUpBlueCharm: @escaping (BlueCharmPairing) -> Void
+    ) {
         _uuid = State(initialValue: current?.uuid ?? "")
         _major = State(initialValue: current?.major.map(String.init) ?? "")
         _minor = State(initialValue: current?.minor.map(String.init) ?? "")
         hadBeacon = current != nil
         self.onSave = onSave
+        self.onSetUpBlueCharm = onSetUpBlueCharm
     }
 
     /// nil when the fields don't make a valid beacon.
@@ -458,19 +474,41 @@ private struct BeaconEditor: View {
         NavigationStack {
             Form {
                 Section {
+                    Button {
+                        Task {
+                            guard let pairing = await blueCharm.setUp() else { return }
+                            onSetUpBlueCharm(pairing)
+                            dismiss()
+                        }
+                    } label: {
+                        HStack {
+                            Text("Set up Blue Charm beacon")
+                            Spacer()
+                            if blueCharm.isBusy { ProgressView() }
+                        }
+                    }
+                    .disabled(blueCharm.isBusy)
+                } header: {
+                    Text("Blue Charm beacon")
+                } footer: {
+                    switch blueCharm.phase {
+                    case .searching: Text("Looking for it…")
+                    case .connecting: Text("Connecting…")
+                    case .writing: Text("Setting it up…")
+                    case .failed(let message): Text(message).foregroundStyle(.red)
+                    case .idle: Text("Plug it into a USB charger by the bed, hold your iPhone next to it, and tap Set up. Goodnight Phone gives it an ID of its own and a bedroom-sized range.")
+                    }
+                }
+
+                Section {
                     TextField("XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX", text: $uuid, axis: .vertical)
                         .font(.body.monospaced())
                         .textInputAutocapitalization(.characters)
                         .autocorrectionDisabled()
-                    Button("Use the recommended beacon's UUID") {
-                        uuid = BeaconConfig.blueCharmUUID
-                        major = ""
-                        minor = ""
-                    }
                 } header: {
-                    Text("Beacon UUID")
+                    Text("Other beacons")
                 } footer: {
-                    Text("It's on the box or in the beacon's setup app. The recommended Blue Charm beacon ships with the UUID above, so one tap fills it in.")
+                    Text("Type the beacon's UUID. It's on the box or in the beacon's setup app.")
                 }
 
                 Section {
@@ -485,7 +523,7 @@ private struct BeaconEditor: View {
                 } header: {
                     Text("No beacon yet?")
                 } footer: {
-                    Text("The Blue Charm BC-U1 plugs into any USB charger, so there's no battery to run out. Lower its transmit power in the free KBeaconPro app if your iPhone still sees it outside the bedroom.\n\nOr, to start tonight, your phone connects to a spare iPad or iPhone running Goodnight Phone, and you set where the bedroom ends by signal strength. On the spare device, open Goodnight Phone and turn on Broadcast as bedroom beacon.")
+                    Text("The Blue Charm BC-U1 plugs into any USB charger, so there's no battery to run out, and Goodnight Phone sets it up for you.\n\nOr, to start tonight, your phone connects to a spare iPad or iPhone running Goodnight Phone, and you set where the bedroom ends by signal strength. On the spare device, open Goodnight Phone and turn on Broadcast as bedroom beacon.")
                 }
 
                 Section {
@@ -519,6 +557,51 @@ private struct BeaconEditor: View {
                     }
                     .disabled(draft == nil)
                 }
+            }
+        }
+    }
+}
+
+// MARK: - Blue Charm range
+
+/// Shorter / Longer for a Blue Charm the app set up: steps its transmit power over Bluetooth.
+/// Locked while blocking like every other setting, so it can't shrink the bedroom to escape.
+private struct BlueCharmRange: View {
+    @EnvironmentObject private var model: AppModel
+    @ObservedObject private var blueCharm = BlueCharm.shared
+    let pairing: BlueCharmPairing
+
+    private var steps: [Int] { BlueCharm.powerSteps }
+    private var index: Int { steps.firstIndex(of: pairing.txPower) ?? steps.firstIndex(of: BlueCharm.startingPower)! }
+
+    var body: some View {
+        LabeledContent("Range") {
+            if blueCharm.isBusy {
+                ProgressView()
+            } else {
+                Text("\(index + 1) of \(steps.count)")
+            }
+        }
+        HStack {
+            Button("Shorter") { step(-1) }
+                .disabled(index == 0)
+            Spacer()
+            Button("Longer") { step(1) }
+                .disabled(index == steps.count - 1)
+        }
+        // Borderless, or a tap anywhere in the row would press both buttons.
+        .buttonStyle(.borderless)
+        .disabled(model.isLocked || blueCharm.isBusy)
+        if case .failed(let message) = blueCharm.phase {
+            Text(message).font(.caption).foregroundStyle(.red)
+        }
+    }
+
+    private func step(_ delta: Int) {
+        let power = steps[index + delta]
+        Task {
+            if let updated = await blueCharm.setPower(power, for: pairing) {
+                model.saveBlueCharm(updated)
             }
         }
     }

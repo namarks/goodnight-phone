@@ -27,6 +27,7 @@ enum Shared {
         static let hubLastHeard = "hubLastHeard"
         static let log = "log"
         static let testBlockUntil = "testBlockUntil"
+        static let blueCharm = "blueCharm"
     }
 
     // MARK: - What to block
@@ -80,6 +81,18 @@ enum Shared {
     static var monitoredBeacon: BeaconConfig? {
         get { decode(BeaconConfig.self, Key.monitoredBeacon) }
         set { encode(newValue, Key.monitoredBeacon) }
+    }
+
+    /// The Blue Charm beacon the app set up itself, so it can change the beacon's range later.
+    /// Only counts while it's still the bedroom beacon (see `pairedBlueCharm`).
+    static var blueCharm: BlueCharmPairing? {
+        get { decode(BlueCharmPairing.self, Key.blueCharm) }
+        set { encode(newValue, Key.blueCharm) }
+    }
+
+    static var pairedBlueCharm: BlueCharmPairing? {
+        guard let blueCharm, beacon?.uuid == blueCharm.uuid else { return nil }
+        return blueCharm
     }
 
     /// With the spare-device stand-in: signal strength (dBm) measured at the bedroom door.
@@ -163,12 +176,20 @@ struct BeaconConfig: Codable, Equatable {
     static let standInUUID = UUID(uuidString: "E6B2E125-B543-4BA4-8D19-B68DBA9F147C")!
     static let standIn = BeaconConfig(uuid: standInUUID.uuidString)
 
-    /// Factory UUID of Blue Charm beacons, including the recommended BC-U1 ("BlueCharmBeacons"
-    /// in ASCII). It isn't printed on the box, so the editor offers it as a one-tap fill.
-    static let blueCharmUUID = "426C7565-4368-6172-6D42-6561636F6E73"
-
     /// The stand-in is watched over a Bluetooth connection (HubMonitor), not as an iBeacon.
     var isStandIn: Bool { uuid == Self.standIn.uuid }
+}
+
+/// A Blue Charm beacon set up from inside the app (App/BlueCharm.swift).
+struct BlueCharmPairing: Codable, Equatable {
+    /// CoreBluetooth's identifier for the beacon on this phone, to find it again for range changes.
+    var peripheralID: String
+    /// The iBeacon UUID the app gave it.
+    var uuid: String
+    /// Transmit power in dBm.
+    var txPower: Int
+
+    var beacon: BeaconConfig { BeaconConfig(uuid: uuid) }
 }
 
 extension FamilyActivitySelection {

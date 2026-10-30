@@ -6,7 +6,7 @@ A personal Brick Night: your chosen apps lock automatically when your iPhone is 
 
 - A Mac with Xcode and a **paid** Apple Developer account ($99/year). Free accounts (Personal Team) generally can't sign the Family Controls capability this needs.
 - An iPhone on iOS 17 or later.
-- **An iBeacon with adjustable transmit power**, roughly $15–25. We recommend the [Blue Charm BC-U1](https://www.amazon.com/dp/B09FYNK94F) (about $19): it runs off any USB-A charger, so there's no battery to die and quietly end blocking, and its power goes down to −40 dBm. The app's beacon screen links to it and fills in its factory UUID with one tap; change settings in the free KBeaconPro app (default password is sixteen zeros, and disconnect when you're done, because it doesn't broadcast while connected). Any other iBeacon works too (Minew and Kontakt.io sell them); you'll need its UUID, which is on the box or in the vendor's app. An ESP32 board broadcasting iBeacon over USB power also works. To test before it arrives, a spare iPad or iPhone can stand in (see [No beacon yet?](#no-beacon-yet)).
+- **An iBeacon with adjustable transmit power**, roughly $15–25. We recommend the [Blue Charm BC-U1](https://www.amazon.com/dp/B09FYNK94F) (about $19): it runs off any USB-A charger, so there's no battery to die and quietly end blocking, and its power goes down to −40 dBm. Goodnight Phone sets it up itself, no other app needed: it gives the beacon an ID of its own and lets you shorten or lengthen its range from the app. Any other iBeacon works too (Minew and Kontakt.io sell them); you'll need its UUID, which is on the box or in the vendor's app, and you tune its range in the vendor's app. An ESP32 board broadcasting iBeacon over USB power also works. To test before it arrives, a spare iPad or iPhone can stand in (see [No beacon yet?](#no-beacon-yet)).
 
 ## Setup (about 10 minutes)
 
@@ -16,7 +16,7 @@ A personal Brick Night: your chosen apps lock automatically when your iPhone is 
    - **Screen Time access**: Allow.
    - **Location**: Allow, then choose **Change to Always Allow**. Keep **Precise Location** on, because beacons don't work without it.
    - **Apps to block**: pick Instagram and anything else.
-   - **Bedroom beacon**: paste the beacon's UUID.
+   - **Bedroom beacon**: with a Blue Charm, plug it in, hold your iPhone next to it and tap **Set up Blue Charm beacon**. With another beacon, paste its UUID.
 4. To see it work before the beacon is set up, tap **Try it now → Block these apps for 2 minutes**, then open a blocked app. Like the real thing, the test can't be cancelled.
 5. Set your bedtime hours (default 9 PM – 7 AM) or turn them off to block any time you're in the room. Tap a day's circle to take that night off (say, Friday and Saturday), and use **Hours by night** to give a night its own hours. A night belongs to the day it starts: Friday night runs from Friday evening into Saturday morning.
 
@@ -25,7 +25,7 @@ A personal Brick Night: your chosen apps lock automatically when your iPhone is 
 Bluetooth goes through walls, so out of the box the zone may reach the hallway.
 
 1. Put the beacon on the far side of the nightstand, away from the door.
-2. In the vendor's app, lower **transmit power** (try about −12 dBm or lower) and set the advertising interval to around 500 ms.
+2. With a Blue Charm set up from the app, use **Shorter** and **Longer** under Bedroom beacon instead of steps 2–4: it starts at −12 dBm, and each tap moves one power step (changes are locked while apps are blocked). With another beacon, in the vendor's app, lower **transmit power** (try about −12 dBm or lower) and set the advertising interval to around 500 ms.
 3. Walk out of the room and wait about 30 seconds. iOS waits a bit before deciding you've left. The app's Activity list should show "Left bedroom".
 4. If it doesn't, lower the power one more step and try again. While Goodnight Phone is open, the **Signal** row under Bedroom beacon shows live signal strength (RSSI) and a rough distance, so you can watch it drop as you walk to the door.
 
@@ -59,6 +59,7 @@ Bedtime starts/ends ──► DeviceActivity wakes the Monitor extension ──�
 | `App/RoomMonitor.swift` | Watches the beacon with `CLMonitor`, and on iOS 18+ holds a `CLServiceSession` once "Always" is granted. It's started on every launch, which is how iOS delivers enter/exit events in the background. |
 | `App/ContentView.swift` | Status card, setup checklist, apps, hours, beacon, activity log. |
 | `App/HubMonitor.swift` | With a spare iPad or iPhone as the beacon: stays connected to it over Bluetooth (also with the app closed), reads the signal on each heartbeat, and decides in or out against the boundary you set at the bedroom door. |
+| `App/BlueCharm.swift` | Sets up the recommended Blue Charm beacon over Bluetooth (its own UUID, starting power) and changes its range, using KKM's SDK vendored in `Vendor/kbeaconlib2`. Only during setup or a range change; blocking never depends on it. |
 | `App/BeaconSignal.swift` | The live Signal row for a real iBeacon: ranges the beacon while the app is open. Display only; blocking follows `RoomMonitor`. |
 | `App/BeaconBroadcaster.swift` | The spare device's side: offers the Bluetooth connection, keeps each phone's bedtime hours, and sends a heartbeat every 2 seconds only during them. |
 | `Extensions/Monitor` | `DeviceActivityMonitor` that calls `Blocker` at bedtime boundaries. |

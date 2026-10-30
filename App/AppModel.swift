@@ -10,6 +10,8 @@ final class AppModel: ObservableObject {
     @Published private(set) var selection = FamilyActivitySelection()
     @Published private(set) var schedule = BedtimeSchedule()
     @Published private(set) var beacon: BeaconConfig?
+    /// Set when the bedroom beacon is a Blue Charm the app set up, so its range can change here.
+    @Published private(set) var blueCharm: BlueCharmPairing?
     @Published private(set) var inRoom = false
     @Published private(set) var isBlocking = false
     @Published private(set) var log: [LogEntry] = []
@@ -24,6 +26,7 @@ final class AppModel: ObservableObject {
         selection = Shared.selection
         schedule = Shared.schedule
         beacon = Shared.beacon
+        blueCharm = Shared.pairedBlueCharm
         inRoom = Shared.inRoom
         isBlocking = Shared.isBlocking
         log = Shared.logEntries.reversed()
@@ -88,11 +91,21 @@ final class AppModel: ObservableObject {
     func saveBeacon(_ newValue: BeaconConfig?) {
         Shared.beacon = newValue
         beacon = newValue
+        blueCharm = Shared.pairedBlueCharm
         HubMonitor.shared.sync()
         Task {
             await RoomMonitor.shared.syncCondition()
             reload()
         }
+    }
+
+    /// After setup or a range change in BlueCharm.
+    func saveBlueCharm(_ pairing: BlueCharmPairing) {
+        Shared.blueCharm = pairing
+        if Shared.beacon != pairing.beacon {
+            saveBeacon(pairing.beacon)
+        }
+        blueCharm = Shared.pairedBlueCharm
     }
 
     /// Called when the app comes to the foreground.
