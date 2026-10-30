@@ -16,7 +16,7 @@ Goodnight Phone blocks the apps you choose while your iPhone is in your bedroom 
 
 **Location.** Goodnight Phone uses iOS beacon monitoring to notice when your iPhone is near your bedroom beacon. iOS reports only "near the beacon" or "not near it". Goodnight Phone doesn't read, store or send your GPS position or any map location.
 
-**Bluetooth.** If you use a spare iPad or iPhone instead of a beacon, Goodnight Phone uses Bluetooth between your own devices to tell whether you're in the bedroom. Nothing is sent anywhere else.
+**Bluetooth.** If you set up a Blue Charm beacon from the app, Goodnight Phone connects to it over Bluetooth to set its ID and range. If you use a spare iPad or iPhone instead of a beacon, Goodnight Phone uses Bluetooth between your own devices to tell whether you're in the bedroom. Nothing is sent anywhere else.
 
 **Settings and activity log.** Your bedtime hours, beacon ID and a short log of recent events (such as "Entered bedroom") are stored on your device, in storage shared only between Goodnight Phone and its own extensions. The log keeps the last 60 entries.
 

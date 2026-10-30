@@ -54,7 +54,7 @@ targets:
           - UIInterfaceOrientationPortrait
         NSLocationWhenInUseUsageDescription: "Goodnight Phone checks whether your iPhone is near your bedroom beacon so it can block the apps you chose at bedtime. Your location never leaves your phone."
         NSLocationAlwaysAndWhenInUseUsageDescription: "Choose “Always” so iOS can wake Goodnight Phone when you walk into the bedroom and block your chosen apps, even when the app is closed. Goodnight Phone only learns whether you’re near your beacon, and nothing leaves your phone."
-        NSBluetoothAlwaysUsageDescription: "Goodnight Phone uses Bluetooth to connect your phone to a spare iPad or iPhone standing in as the bedroom beacon, and to tell how close you are to it."
+        NSBluetoothAlwaysUsageDescription: "Goodnight Phone uses Bluetooth to set up your bedroom beacon and its range, or to connect your phone to a spare iPad or iPhone standing in as the beacon and tell how close you are to it."
         # Keeps the connection to the spare-device stand-in alive with the app closed (HubMonitor).
         UIBackgroundModes:
           - bluetooth-central
@@ -65,9 +65,27 @@ targets:
         com.apple.security.application-groups:
           - group.${BUNDLE_PREFIX}.goodnightphone
     dependencies:
+      - target: kbeaconlib2
       - target: GoodnightPhoneMonitor
       - target: GoodnightPhoneShield
       - target: GoodnightPhoneShieldAction
+
+  # KKM's SDK for Blue Charm beacons, vendored unmodified (Vendor/kbeaconlib2/README.md). Lets the app
+  # set up the recommended beacon and its range itself, so nobody needs the vendor's app.
+  kbeaconlib2:
+    type: framework
+    platform: iOS
+    sources:
+      - path: Vendor/kbeaconlib2
+        excludes:
+          - "*.md"
+          - LICENSE
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: ${BUNDLE_PREFIX}.goodnightphone.kbeaconlib2
+        GENERATE_INFOPLIST_FILE: YES
+        # Third-party code: don't fail or clutter the build on its warnings.
+        SWIFT_SUPPRESS_WARNINGS: YES
 
   # Unit tests for the pure room-presence and schedule logic. Compiles those files directly instead of
   # hosting the app, so tests don't launch it (Screen Time and Bluetooth don't work in the Simulator).
