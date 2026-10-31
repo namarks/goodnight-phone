@@ -262,9 +262,12 @@ struct ContentView: View {
                 LabeledContent("Broadcast as bedroom beacon", value: broadcaster.label)
             }
         } header: {
-            Text("No beacon yet?")
+            // Once this phone has a beacon, "No beacon yet?" reads as if setup isn't finished.
+            Text(model.beacon == nil ? "No beacon yet?" : "Spare iPad or iPhone")
         } footer: {
-            Text("Turn this on in Goodnight Phone on a spare iPad or iPhone to stand in for the beacon while you test.")
+            Text(model.beacon == nil
+                 ? "Turn this on in Goodnight Phone on a spare iPad or iPhone to stand in for the beacon while you test."
+                 : "Only for a spare device that stays by the bed as the bedroom hub. Your bedroom beacon is set up above.")
         }
     }
 
