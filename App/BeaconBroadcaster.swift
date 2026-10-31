@@ -257,9 +257,30 @@ final class BeaconBroadcaster: NSObject, ObservableObject, CBPeripheralManagerDe
 
 /// What a phone writes to the stand-in: its bedtime hours, in its own time zone (the stand-in's
 /// clock may be set to a different one).
+///
+/// It also carries the phone's clock, for an ESP32 hub that has no Wi-Fi and so no other way to
+/// know the time: seconds since 1970, the phone's current offset from UTC, and its next
+/// daylight-saving change (when the offset becomes `offsetAfterChange`). The phone writes this on
+/// every connect and every time the app opens, so the hub's clock is kept fresh. A spare iPad or
+/// iPhone uses its own clock and ignores these.
 struct PhoneHours: Codable {
     var schedule: BedtimeSchedule
     var timeZone: String
+    var now: Int?
+    var utcOffset: Int?
+    var nextOffsetChange: Int?
+    var offsetAfterChange: Int?
+
+    init(schedule: BedtimeSchedule, timeZone: TimeZone = .current, now date: Date = .now) {
+        self.schedule = schedule
+        self.timeZone = timeZone.identifier
+        now = Int(date.timeIntervalSince1970)
+        utcOffset = timeZone.secondsFromGMT(for: date)
+        if let change = timeZone.nextDaylightSavingTimeTransition(after: date) {
+            nextOffsetChange = Int(change.timeIntervalSince1970)
+            offsetAfterChange = timeZone.secondsFromGMT(for: change)
+        }
+    }
 
     func contains(_ date: Date) -> Bool {
         var calendar = Calendar.current

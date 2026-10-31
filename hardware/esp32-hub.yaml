@@ -3,27 +3,24 @@
 # changes: on your iPhone choose Bedroom beacon → Change beacon… → Use a spare iPad or iPhone,
 # then set the boundary standing in the bedroom doorway.
 #
-# Unlike the iPad it needs no app open on a screen. Wi-Fi is only for the clock (heartbeats go out
-# during bedtime hours only, like the iPad) and for over-the-air updates.
+# Unlike the iPad it needs no app open on a screen, and no Wi-Fi: it gets the time from the phone
+# over Bluetooth (heartbeats go out during bedtime hours only, like the iPad), so setup is just
+# flash once, then plug into any USB charger in the bedroom.
 #
 # Tested target: Seeed Studio XIAO ESP32-C6. Other ESP32 boards: change the esp32 block and drop
 # the antenna outputs.
 #
-#   1. Next to this file, create secrets.yaml (never commit it) with:
-#        wifi_ssid: "your network"
-#        wifi_password: "your password"
-#        ota_password: "anything"
-#   2. Set timezone below to the phone's time zone.
-#   3. Plug the board into your Mac and run: esphome run hardware/esp32-hub.yaml
-#      Later updates go over Wi-Fi with the same command.
+#   Plug the board into your Mac and run: esphome run hardware/esp32-hub.yaml
+#   Later updates: the same command, over USB.
 #
 # Protocol (see BeaconBroadcaster): primary service = BeaconConfig.standInUUID, advertised.
 # Heartbeat characteristic: notify, value 0x01 every 2 s during the phone's bedtime hours, one 0x00
 # when they end. Schedule characteristic: the phone writes its PhoneHours JSON
-# ({"schedule": BedtimeSchedule, "timeZone": "..."}). This board keeps one schedule (the last
-# written) for every connected phone (up to 3), and evaluates it in `timezone` below, not the JSON's zone.
-substitutions:
-  timezone: "America/Los_Angeles"
+# ({"schedule": BedtimeSchedule, "timeZone": "...", "now": seconds since 1970, "utcOffset": seconds,
+# "nextOffsetChange": seconds since 1970, "offsetAfterChange": seconds}). This board keeps one
+# schedule and clock (the last written) for every connected phone (up to 3). Until a phone has
+# written once since power-up it has no clock, and beats around the clock like the iPad does
+# before it has hours.
 
 esphome:
   name: bedroom-hub
@@ -50,22 +47,6 @@ output:
 
 logger:
 
-wifi:
-  ssid: !secret wifi_ssid
-  password: !secret wifi_password
-  # Bluetooth keeps working without Wi-Fi (heartbeats then go out around the clock), so a router
-  # outage shouldn't reboot the board.
-  reboot_timeout: 0s
-
-ota:
-  - platform: esphome
-    password: !secret ota_password
-
-time:
-  - platform: sntp
-    id: wall_clock
-    timezone: ${timezone}
-
 json:
 
 esp32_ble:
@@ -91,6 +72,16 @@ esp32_ble_server:
               - lambda: |-
                   std::string text(x.begin(), x.end());
                   bool ok = json::parse_json(text, [](JsonObject root) -> bool {
+                    // The phone's clock (see the protocol note at the top).
+                    if (!root["now"].isNull() && !root["utcOffset"].isNull()) {
+                      id(clock_epoch) = (int64_t) root["now"].as<double>();
+                      id(clock_millis) = millis();
+                      id(utc_offset) = root["utcOffset"].as<int>();
+                      id(offset_change_at) = root["nextOffsetChange"].isNull()
+                          ? 0 : (int64_t) root["nextOffsetChange"].as<double>();
+                      id(offset_after) = root["offsetAfterChange"] | id(utc_offset);
+                      id(have_clock) = true;
+                    }
                     JsonObject s = root["schedule"];
                     if (s.isNull()) return false;
                     id(limit_to_hours) = s["limitToHours"] | true;
@@ -117,6 +108,19 @@ esp32_ble_server:
                   ESP_LOGI("hub", "Schedule %s (%d bytes)", ok ? "received" : "unreadable", (int) x.size());
 
 globals:
+  - id: have_clock
+    type: bool
+    initial_value: "false"
+  - id: clock_epoch       # seconds since 1970 when the phone last wrote
+    type: int64_t
+  - id: clock_millis      # millis() at that moment
+    type: uint32_t
+  - id: utc_offset        # the phone's offset from UTC then, in seconds
+    type: int
+  - id: offset_change_at  # next daylight-saving change, seconds since 1970 (0 = none)
+    type: int64_t
+  - id: offset_after      # the offset after that change
+    type: int
   - id: have_schedule
     type: bool
     initial_value: "false"
@@ -135,10 +139,14 @@ script:
     then:
       - lambda: |-
           bool awake = true;   // like the iPad: no schedule yet (or no clock yet) means beat
-          auto now = id(wall_clock).now();
-          if (id(have_schedule) && id(limit_to_hours) && now.is_valid()) {
-            int minutes = now.hour * 60 + now.minute;
-            int today = now.day_of_week - 1;   // ESPHome: 1 = Sunday
+          if (id(have_schedule) && id(limit_to_hours) && id(have_clock)) {
+            // Unsigned subtraction survives millis() wrapping (every ~49 days).
+            int64_t now = id(clock_epoch) + (uint32_t) (millis() - id(clock_millis)) / 1000;
+            bool changed = id(offset_change_at) > 0 && now >= id(offset_change_at);
+            int64_t local = now + (changed ? id(offset_after) : id(utc_offset));
+            int64_t days = local / 86400;
+            int minutes = (int) (local % 86400) / 60;
+            int today = (int) ((days + 4) % 7);   // 1 Jan 1970 was a Thursday; 0 = Sunday
             auto length = [](int start, int end) {
               int len = ((end - start) % 1440 + 1440) % 1440;
               return len == 0 ? 1440 : len;

@@ -78,7 +78,7 @@ Plug their iPhone into the Mac once so Xcode registers it with your team, then p
 
 ## No beacon yet?
 
-A spare iPad or iPhone can be the beacon (the app calls this a **bedroom hub**; an ESP32 board flashed with [`hardware/esp32-hub.yaml`](hardware/esp32-hub.yaml) works the same way and needs no screen left on). This works like Brick Night: your phone stays connected to the spare device and decides by signal strength, so you choose where the bedroom ends instead of tuning transmit power.
+A spare iPad or iPhone can be the beacon (the app calls this a **bedroom hub**; an ESP32 board flashed with [`hardware/esp32-hub.yaml`](hardware/esp32-hub.yaml) works the same way, needs no screen left on, and needs no Wi-Fi because it takes the time from your phone). This works like Brick Night: your phone stays connected to the spare device and decides by signal strength, so you choose where the bedroom ends instead of tuning transmit power.
 
 1. Install Goodnight Phone on the spare device the same way (plug it in, pick it as the run destination, ⌘R). It doesn't need the setup checklist.
 2. On the spare device, open **No beacon yet? → Broadcast as bedroom beacon**, turn it on and allow Bluetooth. Leave Goodnight Phone open (any screen), plugged in, by the bed. iOS only keeps this running while the app is on screen, so the display stays on.
