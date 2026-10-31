@@ -121,9 +121,10 @@ final class HubMonitor: NSObject, ObservableObject, CBCentralManagerDelegate, CB
         }
     }
 
-    /// Tells the stand-in your bedtime hours, so it only wakes this phone during them.
+    /// Tells the stand-in your bedtime hours, so it only wakes this phone during them, and the
+    /// time, so an ESP32 hub needs no Wi-Fi.
     func sendSchedule() {
-        let hours = PhoneHours(schedule: Shared.schedule, timeZone: TimeZone.current.identifier)
+        let hours = PhoneHours(schedule: Shared.schedule)
         guard let hub, hub.state == .connected, let scheduleCharacteristic,
               let data = try? JSONEncoder().encode(hours) else { return }
         hub.writeValue(data, for: scheduleCharacteristic, type: .withResponse)
