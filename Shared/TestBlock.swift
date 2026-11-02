@@ -7,7 +7,7 @@ extension DeviceActivityName {
 
 /// "Try it now": blocks the chosen apps for a couple of minutes without a beacon,
 /// so new users (and App Review) can see the shield before the bedroom is set up.
-/// Like the real thing, it can't be cancelled early. It only ever adds a block.
+/// It only ever adds a block: stopping it early ends the test, never a real bedtime block.
 enum TestBlock {
     static let duration: TimeInterval = 2 * 60
 
@@ -39,5 +39,14 @@ enum TestBlock {
             Shared.log("Couldn't schedule the end of the test: \(error.localizedDescription)")
         }
         Blocker.refresh(reason: "test started")
+    }
+
+    /// Ends the test early. Blocker recomputes, so if you're in the bedroom during
+    /// bedtime hours the apps stay blocked.
+    static func stop() {
+        guard endsAt != nil else { return }
+        Shared.testBlockUntil = nil
+        DeviceActivityCenter().stopMonitoring([.testBlock])
+        Blocker.refresh(reason: "test stopped")
     }
 }
