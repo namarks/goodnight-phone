@@ -197,9 +197,12 @@ extension FamilyActivitySelection {
         applicationTokens.isEmpty && categoryTokens.isEmpty && webDomainTokens.isEmpty
     }
 
-    /// iOS shields at most 50 tokens of each kind; anything past that may not be blocked.
+    /// Blocker splits apps and sites across stores of 50 each; past the last store, the rest
+    /// can't be blocked.
     var exceedsShieldLimit: Bool {
-        applicationTokens.count > 50 || categoryTokens.count > 50 || webDomainTokens.count > 50
+        let max = Blocker.tokensPerStore * Blocker.maxStores
+        return applicationTokens.count > max || categoryTokens.count > Blocker.tokensPerStore
+            || webDomainTokens.count > max
     }
 
     var summary: String {

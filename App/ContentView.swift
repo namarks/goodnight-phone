@@ -305,7 +305,7 @@ struct ContentView: View {
         if model.isLocked {
             Text("Locked while you're in the bedroom. Leave the room to make changes.")
         } else if model.selection.exceedsShieldLimit {
-            Text("iOS blocks at most 50 apps (and 50 sites) at once. Pick whole categories to cover more.")
+            Text("That's more apps or sites than Goodnight Phone can block (\(Blocker.tokensPerStore * Blocker.maxStores) each). Pick whole categories to cover more.")
                 .foregroundStyle(.orange)
         }
     }

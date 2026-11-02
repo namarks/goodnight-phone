@@ -3,8 +3,14 @@ import FamilyControls
 import ManagedSettings
 
 extension ManagedSettingsStore.Name {
-    /// One named store, shared by the app and its extensions.
+    /// The first named store, shared by the app and its extensions. It holds the categories
+    /// and the first 50 apps and sites; any more spill into `bedroom2`, `bedroom3`, and so on.
     static let bedroom = Self("bedroom")
+
+    /// The store for the given group of 50 apps/sites (0 is `bedroom`).
+    static func bedroom(_ index: Int) -> Self {
+        index == 0 ? .bedroom : Self("bedroom\(index + 1)")
+    }
 }
 
 /// The single source of truth for "should apps be blocked right now?"
@@ -15,7 +21,13 @@ extension ManagedSettingsStore.Name {
 /// The app calls it on beacon enter/exit; the DeviceActivity extension calls it when
 /// bedtime hours start and end.
 enum Blocker {
-    private static let store = ManagedSettingsStore(named: .bedroom)
+    /// iOS shields at most 50 apps (and 50 sites) per store, and ignores a store's whole app
+    /// list past that. Stores combine, so a bigger list is split into groups of 50.
+    static let tokensPerStore = 50
+    /// 20 stores = up to 1,000 apps. Every one is cleared when blocking stops.
+    static let maxStores = 20
+
+    private static let stores = (0..<maxStores).map { ManagedSettingsStore(named: .bedroom($0)) }
 
     @discardableResult
     static func refresh(reason: String, now: Date = .now) -> Bool {
@@ -25,15 +37,25 @@ enum Blocker {
             && !selection.isEmptySelection
 
         if shouldBlock {
-            let apps = selection.applicationTokens
+            let appGroups = chunks(selection.applicationTokens)
+            let siteGroups = chunks(selection.webDomainTokens)
             let categories = selection.categoryTokens
-            let sites = selection.webDomainTokens
-            store.shield.applications = apps.isEmpty ? nil : apps
-            store.shield.applicationCategories = categories.isEmpty ? nil : .specific(categories)
-            store.shield.webDomains = sites.isEmpty ? nil : sites
-            store.shield.webDomainCategories = categories.isEmpty ? nil : .specific(categories)
+            for (index, store) in stores.enumerated() {
+                let apps = index < appGroups.count ? appGroups[index] : []
+                let sites = index < siteGroups.count ? siteGroups[index] : []
+                store.shield.applications = apps.isEmpty ? nil : apps
+                store.shield.webDomains = sites.isEmpty ? nil : sites
+                // Categories have no per-store cap worth splitting (iOS has only a dozen or so).
+                if index == 0 && !categories.isEmpty {
+                    store.shield.applicationCategories = .specific(categories)
+                    store.shield.webDomainCategories = .specific(categories)
+                } else {
+                    store.shield.applicationCategories = nil
+                    store.shield.webDomainCategories = nil
+                }
+            }
         } else {
-            store.clearAllSettings()
+            stores.forEach { $0.clearAllSettings() }
         }
 
         if Shared.isBlocking != shouldBlock {
@@ -41,5 +63,13 @@ enum Blocker {
         }
         Shared.isBlocking = shouldBlock
         return shouldBlock
+    }
+
+    /// Splits tokens into groups of `tokensPerStore`, at most `maxStores` groups.
+    static func chunks<T: Hashable>(_ tokens: Set<T>) -> [Set<T>] {
+        let list = Array(tokens)
+        return stride(from: 0, to: min(list.count, tokensPerStore * maxStores), by: tokensPerStore).map {
+            Set(list[$0..<min($0 + tokensPerStore, list.count)])
+        }
     }
 }
