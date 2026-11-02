@@ -147,11 +147,17 @@ struct ContentView: View {
             if model.selection.isEmptySelection {
                 Text("No apps selected").foregroundStyle(.secondary)
             }
-            ForEach(Array(model.selection.applicationTokens), id: \.self) { token in
-                Label(token)
-            }
             ForEach(Array(model.selection.categoryTokens), id: \.self) { token in
                 Label(token)
+            }
+            // A category also brings in every app inside it, so this list can get long.
+            let apps = Array(model.selection.applicationTokens)
+            if apps.count > 8 {
+                DisclosureGroup("\(apps.count) apps") {
+                    ForEach(apps, id: \.self) { Label($0) }
+                }
+            } else {
+                ForEach(apps, id: \.self) { Label($0) }
             }
             ForEach(Array(model.selection.webDomainTokens), id: \.self) { token in
                 Label(token)
@@ -313,7 +319,18 @@ struct ContentView: View {
     // MARK: - Helpers
 
     private func openPicker() {
-        pickerSelection = model.selection
+        // includeEntireCategory: ticking a category also adds each of its apps by name.
+        // iOS's category block skipped Instagram on a real phone while blocking it by name
+        // worked, so Blocker shields both (split across stores past 50 apps).
+        if model.selection.includeEntireCategory {
+            pickerSelection = model.selection
+        } else {
+            var selection = FamilyActivitySelection(includeEntireCategory: true)
+            selection.applicationTokens = model.selection.applicationTokens
+            selection.categoryTokens = model.selection.categoryTokens
+            selection.webDomainTokens = model.selection.webDomainTokens
+            pickerSelection = selection
+        }
         showingPicker = true
     }
 
