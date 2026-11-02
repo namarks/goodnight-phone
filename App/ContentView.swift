@@ -147,20 +147,18 @@ struct ContentView: View {
             if model.selection.isEmptySelection {
                 Text("No apps selected").foregroundStyle(.secondary)
             }
-            ForEach(Array(model.selection.categoryTokens), id: \.self) { token in
-                Label(token)
-            }
-            // A category also brings in every app inside it, so this list can get long.
-            let apps = Array(model.selection.applicationTokens)
-            if apps.count > 8 {
-                DisclosureGroup("\(apps.count) apps") {
-                    ForEach(apps, id: \.self) { Label($0) }
-                }
+            let selection = model.selection
+            if selection.categoryTokens.isEmpty {
+                ForEach(Array(selection.applicationTokens), id: \.self) { Label($0) }
+                ForEach(Array(selection.webDomainTokens), id: \.self) { Label($0) }
             } else {
-                ForEach(apps, id: \.self) { Label($0) }
-            }
-            ForEach(Array(model.selection.webDomainTokens), id: \.self) { token in
-                Label(token)
+                // A ticked category also adds each of its apps and sites by name (so iOS can't
+                // skip one), and the picker doesn't say which were picked one by one. So list
+                // the categories and give one total that includes them.
+                ForEach(Array(selection.categoryTokens), id: \.self) { Label($0) }
+                Text(selection.coverage)
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
             }
             Button("Choose apps…") { openPicker() }
                 .disabled(!model.screenTimeApproved || model.isLocked)

@@ -205,6 +205,15 @@ extension FamilyActivitySelection {
             || webDomainTokens.count > max
     }
 
+    /// "Covers 40 apps and 32 websites": everything blocked, the categories' own apps included.
+    var coverage: String {
+        let apps = applicationTokens.count, sites = webDomainTokens.count
+        var parts: [String] = []
+        if apps > 0 { parts.append("\(apps) app\(apps == 1 ? "" : "s")") }
+        if sites > 0 { parts.append("\(sites) website\(sites == 1 ? "" : "s")") }
+        return parts.isEmpty ? "Covers every app in these categories" : "Covers \(parts.joined(separator: " and ")) in total"
+    }
+
     var summary: String {
         var parts: [String] = []
         let apps = applicationTokens.count, cats = categoryTokens.count, sites = webDomainTokens.count
