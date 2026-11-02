@@ -167,15 +167,19 @@ struct ContentView: View {
 
     private var tryItSection: some View {
         Section {
-            Button("Block these apps for 2 minutes") { model.startTestBlock() }
-                .disabled(model.isBlocking)
+            if model.testEndsAt != nil {
+                Button("Stop test", role: .destructive) { model.stopTestBlock() }
+            } else {
+                Button("Block these apps for 2 minutes") { model.startTestBlock() }
+                    .disabled(model.isBlocking)
+            }
         } header: {
             Text("Try it now")
         } footer: {
             if let end = model.testEndsAt {
-                Text("Test running. Open a blocked app to see the screen. Everything unlocks at \(end.formatted(date: .omitted, time: .shortened)).")
+                Text("Test running. Open a blocked app to see the screen. It ends at \(end.formatted(date: .omitted, time: .shortened)), or tap Stop test.")
             } else {
-                Text("See what blocking looks like without a beacon. Like the real thing, it can't be cancelled early.")
+                Text("See what blocking looks like without a beacon. You can stop the test early; that never lifts a real bedtime block.")
             }
         }
     }
@@ -301,7 +305,7 @@ struct ContentView: View {
         if model.isLocked {
             Text("Locked while you're in the bedroom. Leave the room to make changes.")
         } else if model.selection.exceedsShieldLimit {
-            Text("iOS blocks at most 50 apps (and 50 sites) at once. Pick whole categories to cover more.")
+            Text("That's more apps or sites than Goodnight Phone can block (\(Blocker.tokensPerStore * Blocker.maxStores) each). Pick whole categories to cover more.")
                 .foregroundStyle(.orange)
         }
     }

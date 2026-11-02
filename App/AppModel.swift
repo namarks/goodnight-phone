@@ -64,6 +64,11 @@ final class AppModel: ObservableObject {
         }
     }
 
+    func stopTestBlock() {
+        TestBlock.stop()
+        reload()
+    }
+
     func saveSelection(_ newValue: FamilyActivitySelection) {
         Shared.selection = newValue
         Blocker.refresh(reason: "blocked apps changed")
