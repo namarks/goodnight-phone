@@ -13,8 +13,8 @@ A personal Brick Night: your chosen apps lock automatically when your iPhone is 
 1. `./setup.sh` installs XcodeGen if needed, asks for your Team ID (it tries to detect it) and a bundle prefix, then generates and opens `GoodnightPhone.xcodeproj`.
 2. Plug in your iPhone, choose it as the run destination, and press **⌘R**. If this is the first time, turn on Settings → Privacy & Security → **Developer Mode**.
 3. Work through the checklist in the app:
-   - **Screen Time access**: Allow.
-   - **Location**: Allow, then choose **Change to Always Allow**. Keep **Precise Location** on, because beacons don't work without it.
+   - **Screen Time access**: tap Continue, then Allow in the iOS prompt.
+   - **Location**: tap Continue, allow in the iOS prompt, then choose **Change to Always Allow**. Keep **Precise Location** on, because beacons don't work without it.
    - **Apps to block**: pick Instagram and anything else.
    - **Bedroom beacon**: with a Blue Charm, plug it in, hold your iPhone next to it and tap **Set up Blue Charm beacon**. With another beacon, paste its UUID.
 4. To see it work before the beacon is set up, tap **Try it now → Block these apps for 2 minutes**, then open a blocked app. You can stop the test early; that only ends the test, never a real bedtime block.

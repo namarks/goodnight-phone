@@ -95,7 +95,7 @@ struct ContentView: View {
                 title: "Screen Time access",
                 detail: model.screenTimeApproved ? "Allowed" : "Lets Goodnight Phone block apps",
                 done: model.screenTimeApproved,
-                button: "Allow"
+                button: "Continue"
             ) { Task { await model.requestScreenTime() } }
 
             if !usesStandIn {
@@ -103,7 +103,7 @@ struct ContentView: View {
                     title: "Location: Always + Precise",
                     detail: location.label,
                     done: location.isReady,
-                    button: location.status == .notDetermined ? "Allow" : "Fix"
+                    button: location.status == .notDetermined ? "Continue" : "Fix"
                 ) { location.request() }
             }
 
