@@ -245,7 +245,7 @@ struct ContentView: View {
             Text(usesStandIn
                  ? "Stronger than the boundary counts as in the bedroom. Set it standing in the bedroom doorway, not next to the spare device; anywhere weaker, like the kitchen, counts as outside. During bedtime hours, walking in registers within about 10 seconds and leaving within about 15, even with the app closed, so a weak moment by the bed doesn't lift the block."
                  : model.blueCharm != nil
-                 ? "Signal is live while the app is open. Blocking follows Status, and iOS takes about 30 seconds to register that you've left. If it still says “In the bedroom” after you step out of the room, tap Shorter; if it says “Outside” by the bed, tap Longer."
+                 ? "Signal is live while the app is open. Blocking follows Status, and iOS takes about 30 seconds to register that you've left. If it still says “In the bedroom” after you step out of the room, tap Shorter; if it says “Outside” by the bed, tap Longer. For 15 minutes after setup these work even while apps are blocked."
                  : "Signal is live while the app is open. Blocking follows Status, and iOS takes about 30 seconds to register that you've left. If it still says “In the bedroom” after you step out of the room, turn the beacon's transmit power down.")
         }
     }
@@ -587,7 +587,8 @@ private struct BeaconEditor: View {
 // MARK: - Blue Charm range
 
 /// Shorter / Longer for a Blue Charm the app set up: steps its transmit power over Bluetooth.
-/// Locked while blocking like every other setting, so it can't shrink the bedroom to escape.
+/// Locked while blocking like every other setting, so it can't shrink the bedroom to escape,
+/// except during the tuning window right after setup (BlueCharmPairing.tuningWindow).
 private struct BlueCharmRange: View {
     @EnvironmentObject private var model: AppModel
     @ObservedObject private var blueCharm = BlueCharm.shared
@@ -613,7 +614,7 @@ private struct BlueCharmRange: View {
         }
         // Borderless, or a tap anywhere in the row would press both buttons.
         .buttonStyle(.borderless)
-        .disabled(model.isLocked || blueCharm.isBusy)
+        .disabled((model.isLocked && !pairing.inTuningWindow()) || blueCharm.isBusy)
         if case .failed(let message) = blueCharm.phase {
             Text(message).font(.caption).foregroundStyle(.red)
         }

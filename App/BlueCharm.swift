@@ -74,7 +74,8 @@ final class BlueCharm: NSObject, ObservableObject {
             let pairing = BlueCharmPairing(
                 peripheralID: beacon.uuidString ?? "",
                 uuid: UUID().uuidString,
-                txPower: Self.startingPower
+                txPower: Self.startingPower,
+                setUpAt: .now
             )
             let config = KBCfgAdvIBeacon()
             config.setSlotIndex(0)
