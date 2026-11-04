@@ -470,7 +470,7 @@ private struct BeaconEditor: View {
         // Beacons used before this list existed: the current one and a Blue Charm set up here.
         var saved = Shared.savedBeacons
         for beacon in [current, Shared.blueCharm?.beacon].compactMap({ $0 })
-        where !saved.contains(where: { $0.uuid == beacon.uuid }) {
+        where !saved.contains(beacon) {
             saved.append(beacon)
         }
         _saved = State(initialValue: saved)
@@ -488,7 +488,7 @@ private struct BeaconEditor: View {
             Form {
                 if !saved.isEmpty {
                     Section {
-                        ForEach(saved, id: \.uuid) { beacon in
+                        ForEach(saved, id: \.self) { beacon in
                             Button { pick(beacon) } label: {
                                 HStack {
                                     VStack(alignment: .leading, spacing: 2) {
@@ -496,7 +496,7 @@ private struct BeaconEditor: View {
                                         Text(detail(for: beacon)).font(.caption).foregroundStyle(.secondary)
                                     }
                                     Spacer()
-                                    if beacon.uuid == current?.uuid {
+                                    if beacon == current {
                                         Image(systemName: "checkmark").foregroundStyle(Color.accentColor)
                                     }
                                 }

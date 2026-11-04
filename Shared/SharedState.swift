@@ -102,8 +102,15 @@ enum Shared {
         set { encode(newValue, Key.savedBeacons) }
     }
 
-    static func remember(_ beacon: BeaconConfig) {
-        savedBeacons = Array(([beacon] + savedBeacons.filter { $0.uuid != beacon.uuid }).prefix(5))
+    /// Call before changing `beacon`. Keeps the beacon being replaced too, which also covers
+    /// installs from before this list existed. Two beacons sharing a UUID with different
+    /// major/minor are different entries.
+    static func remember(switchingTo newBeacon: BeaconConfig?) {
+        var list: [BeaconConfig] = []
+        for beacon in [newBeacon, Self.beacon].compactMap({ $0 }) + savedBeacons where !list.contains(beacon) {
+            list.append(beacon)
+        }
+        savedBeacons = Array(list.prefix(5))
     }
 
     /// With the spare-device stand-in: signal strength (dBm) measured at the bedroom door.
@@ -168,7 +175,7 @@ struct LogEntry: Codable, Identifiable, Hashable {
 
 /// The iBeacon that marks the bedroom. Major/minor are optional and only needed
 /// when several beacons share one UUID (common with vendor default UUIDs).
-struct BeaconConfig: Codable, Equatable {
+struct BeaconConfig: Codable, Hashable {
     var uuid: String
     var major: UInt16?
     var minor: UInt16?
