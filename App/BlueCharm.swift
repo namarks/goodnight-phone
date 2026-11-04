@@ -33,8 +33,9 @@ final class BlueCharm: NSObject, ObservableObject {
 
     /// Transmit power steps the firmware accepts, weakest first (dBm).
     static let powerSteps = [-40, -20, -16, -12, -8, -4, 0, 4]
-    /// Where setup starts: roughly a bedroom, and usually stops short of the next room.
-    static let startingPower = -12
+    /// Where setup starts. −12 dBm reached past the bedroom door on the first real test, and a
+    /// range that's too long keeps you blocked outside the room, so start small; Longer is a tap away.
+    static let startingPower = -20
     /// Factory password (sixteen zeros). Left as is: KKM can't reset a lost password.
     private static let password = "0000000000000000"
     /// During setup the phone is held next to the beacon, so anything weaker is someone else's.
@@ -74,7 +75,8 @@ final class BlueCharm: NSObject, ObservableObject {
             let pairing = BlueCharmPairing(
                 peripheralID: beacon.uuidString ?? "",
                 uuid: UUID().uuidString,
-                txPower: Self.startingPower
+                txPower: Self.startingPower,
+                setUpAt: .now
             )
             let config = KBCfgAdvIBeacon()
             config.setSlotIndex(0)

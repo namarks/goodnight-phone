@@ -25,7 +25,7 @@ A personal Brick Night: your chosen apps lock automatically when your iPhone is 
 Bluetooth goes through walls, so out of the box the zone may reach the hallway.
 
 1. Put the beacon on the far side of the nightstand, away from the door.
-2. With a Blue Charm set up from the app, use **Shorter** and **Longer** under Bedroom beacon instead of steps 2–4: it starts at −12 dBm, and each tap moves one power step (changes are locked while apps are blocked). With another beacon, in the vendor's app, lower **transmit power** (try about −12 dBm or lower) and set the advertising interval to around 500 ms.
+2. With a Blue Charm set up from the app, use **Shorter** and **Longer** under Bedroom beacon instead of steps 2–4: it starts at −20 dBm, and each tap moves one power step (changes are locked while apps are blocked, except for the first 15 minutes after setup, so you can tune it from bed on the first night). With another beacon, in the vendor's app, lower **transmit power** (try about −12 dBm or lower) and set the advertising interval to around 500 ms.
 3. Walk out of the room and wait about 30 seconds. iOS waits a bit before deciding you've left. The app's Activity list should show "Left bedroom".
 4. If it doesn't, lower the power one more step and try again. While Goodnight Phone is open, the **Signal** row under Bedroom beacon shows live signal strength (RSSI) and a rough distance, so you can watch it drop as you walk to the door.
 

@@ -188,8 +188,19 @@ struct BlueCharmPairing: Codable, Equatable {
     var uuid: String
     /// Transmit power in dBm.
     var txPower: Int
+    /// When the app set it up. Nil for pairings saved before the tuning window existed.
+    var setUpAt: Date?
 
     var beacon: BeaconConfig { BeaconConfig(uuid: uuid) }
+
+    /// Most people set up the beacon in the bedroom at bedtime, where blocking starts right away
+    /// and locks the range. For this long after setup the range can still change while blocking.
+    static let tuningWindow: TimeInterval = 15 * 60
+
+    func inTuningWindow(at now: Date = .now) -> Bool {
+        guard let setUpAt else { return false }
+        return now.timeIntervalSince(setUpAt) < Self.tuningWindow
+    }
 }
 
 extension FamilyActivitySelection {
