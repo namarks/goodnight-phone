@@ -28,6 +28,7 @@ enum Shared {
         static let log = "log"
         static let testBlockUntil = "testBlockUntil"
         static let blueCharm = "blueCharm"
+        static let savedBeacons = "savedBeacons"
     }
 
     // MARK: - What to block
@@ -93,6 +94,16 @@ enum Shared {
     static var pairedBlueCharm: BlueCharmPairing? {
         guard let blueCharm, beacon?.uuid == blueCharm.uuid else { return nil }
         return blueCharm
+    }
+
+    /// Beacons used before, most recent first, so the beacon screen can switch back with one tap.
+    static var savedBeacons: [BeaconConfig] {
+        get { decode([BeaconConfig].self, Key.savedBeacons) ?? [] }
+        set { encode(newValue, Key.savedBeacons) }
+    }
+
+    static func remember(_ beacon: BeaconConfig) {
+        savedBeacons = Array(([beacon] + savedBeacons.filter { $0.uuid != beacon.uuid }).prefix(5))
     }
 
     /// With the spare-device stand-in: signal strength (dBm) measured at the bedroom door.

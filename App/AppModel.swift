@@ -94,6 +94,7 @@ final class AppModel: ObservableObject {
     }
 
     func saveBeacon(_ newValue: BeaconConfig?) {
+        if let newValue { Shared.remember(newValue) }
         Shared.beacon = newValue
         beacon = newValue
         blueCharm = Shared.pairedBlueCharm
