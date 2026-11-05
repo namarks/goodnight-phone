@@ -2,8 +2,8 @@ import CoreBluetooth
 import Foundation
 import kbeaconlib2
 
-/// Sets up and tunes the recommended Blue Charm beacon (KKM KBeacon Pro firmware) from inside the
-/// app, so nobody needs the vendor's app. Setup gives the beacon an ID of its own, so a neighbor's
+/// Sets up and tunes the recommended Blue Charm beacons (KKM KBeacon Pro firmware: the USB BC-U1
+/// and the coin-cell BC05) from inside the app, so nobody needs the vendor's app. Setup gives the beacon an ID of its own, so a neighbor's
 /// Blue Charm can't count as your bedroom, and starts it at a modest transmit power; the range
 /// buttons step that power up or down.
 ///
@@ -48,9 +48,9 @@ final class BlueCharm: NSObject, ObservableObject {
             switch self {
             case .bluetoothOff: return "Turn on Bluetooth and try again."
             case .bluetoothNotAllowed: return "Goodnight Phone needs Bluetooth. Turn it on in Settings → Goodnight Phone."
-            case .notFound: return "No Blue Charm beacon found. Make sure it's plugged in, hold your iPhone right next to it, and try again. If it's been plugged in a while, unplug it and plug it back in."
+            case .notFound: return "No Blue Charm beacon found. Make sure it's plugged in (or has its battery in), hold your iPhone right next to it, and try again. If that doesn't work, unplug it or take the battery out for a few seconds, then try again."
             case .passwordChanged: return "This beacon has a password set, so Goodnight Phone can't change it. You can still type in its UUID below."
-            case .connectionFailed: return "Couldn't connect to the beacon. Unplug it, plug it back in, and try again."
+            case .connectionFailed: return "Couldn't connect to the beacon. Unplug it (or take the battery out) for a few seconds, then try again."
             case .writeFailed: return "The beacon didn't accept the change. Try again."
             }
         }
@@ -84,12 +84,15 @@ final class BlueCharm: NSObject, ObservableObject {
             config.setMajorID(1)
             config.setMinorID(1)
             config.setTxPower(pairing.txPower)
-            config.setAdvPeriod(500)
+            // Once a second: the usual beacon rate, which is what battery-life claims assume
+            // (about four years on the BC05's coin cell). Twice as often would halve that, and iOS
+            // notices a bedroom beacon just as well either way.
+            config.setAdvPeriod(1000)
             config.setAdvTriggerOnly(false)
             // Stay connectable, or range changes would need the beacon unplugged first.
             config.setAdvConnectable(true)
             try await write(config, to: beacon)
-            Shared.log("Set up Blue Charm beacon at \(pairing.txPower) dBm")
+            Shared.log("Set up Blue Charm beacon \(beacon.model ?? "?") at \(pairing.txPower) dBm")
             return pairing
         }
     }
