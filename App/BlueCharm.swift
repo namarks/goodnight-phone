@@ -48,9 +48,9 @@ final class BlueCharm: NSObject, ObservableObject {
             switch self {
             case .bluetoothOff: return "Turn on Bluetooth and try again."
             case .bluetoothNotAllowed: return "Goodnight Phone needs Bluetooth. Turn it on in Settings → Goodnight Phone."
-            case .notFound: return "No Blue Charm beacon found. Make sure it's plugged in (or has its battery in), hold your iPhone right next to it, and try again. If that doesn't work, unplug it or take the battery out for a few seconds, then try again."
+            case .notFound: return "No Blue Charm beacon found. Make sure it's plugged in, or that the battery one is turned on (twist it open and hold the white button inside for 3 seconds, until the light flashes red). Then hold your iPhone right next to it and try again. If that doesn't work, unplug it and plug it back in."
             case .passwordChanged: return "This beacon has a password set, so Goodnight Phone can't change it. You can still type in its UUID below."
-            case .connectionFailed: return "Couldn't connect to the beacon. Unplug it (or take the battery out) for a few seconds, then try again."
+            case .connectionFailed: return "Couldn't connect to the beacon. Unplug it and plug it back in (for the battery one, hold the button inside for 5 seconds to turn it off, then 3 seconds to turn it back on), then try again."
             case .writeFailed: return "The beacon didn't accept the change. Try again."
             }
         }

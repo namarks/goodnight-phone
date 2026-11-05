@@ -518,7 +518,7 @@ private struct BeaconEditor: View {
                     case .connecting: Text("Connecting…")
                     case .writing: Text("Setting it up…")
                     case .failed(let message): Text(message).foregroundStyle(.red)
-                    case .idle: Text("Plug it into a USB charger by the bed (or set the battery one by the bed), hold your iPhone next to it, and tap Set up. Goodnight Phone gives it an ID of its own and a bedroom-sized range.")
+                    case .idle: Text("Plug it into a USB charger by the bed. For the battery one, twist it open, hold the white button inside for 3 seconds until the light flashes red, and close it. Then hold your iPhone next to it and tap Set up. Goodnight Phone gives it an ID of its own and a bedroom-sized range.")
                     }
                 }
 
