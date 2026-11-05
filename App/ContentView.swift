@@ -518,7 +518,7 @@ private struct BeaconEditor: View {
                     case .connecting: Text("Connecting…")
                     case .writing: Text("Setting it up…")
                     case .failed(let message): Text(message).foregroundStyle(.red)
-                    case .idle: Text("Plug it into a USB charger by the bed, hold your iPhone next to it, and tap Set up. Goodnight Phone gives it an ID of its own and a bedroom-sized range.")
+                    case .idle: Text("Plug it into a USB charger by the bed. For the battery one, twist it open, hold the white button inside for 3 seconds until the light flashes red, and close it. Then hold your iPhone next to it and tap Set up. Goodnight Phone gives it an ID of its own and a bedroom-sized range.")
                     }
                 }
 
@@ -537,6 +537,9 @@ private struct BeaconEditor: View {
                     Link(destination: AppLinks.recommendedBeacon) {
                         Label("Get the recommended beacon (about $19)", systemImage: "cart")
                     }
+                    Link(destination: AppLinks.batteryBeacon) {
+                        Label("Or the battery one (about $21)", systemImage: "cart")
+                    }
                     Button("Use a bedroom hub") {
                         uuid = BeaconConfig.standIn.uuid
                         major = ""
@@ -545,7 +548,7 @@ private struct BeaconEditor: View {
                 } header: {
                     Text("No beacon yet?")
                 } footer: {
-                    Text("The Blue Charm BC-U1 plugs into any USB charger, so there's no battery to run out, and Goodnight Phone sets it up for you.\n\nOr use a bedroom hub: a spare iPad or iPhone running Goodnight Phone (open it there and turn on Broadcast as bedroom beacon), or a hub board. Your phone stays connected to it, and you set where the bedroom ends by standing in the doorway.")
+                    Text("The Blue Charm BC-U1 plugs into any USB charger, so there's no battery to run out, and Goodnight Phone sets it up for you. If there's no outlet by the bed, the Blue Charm BC05 is a small puck that runs for years on a coin cell, and Goodnight Phone sets it up the same way. If its battery dies, blocking stops until you replace it.\n\nOr use a bedroom hub: a spare iPad or iPhone running Goodnight Phone (open it there and turn on Broadcast as bedroom beacon), or a hub board. Your phone stays connected to it, and you set where the bedroom ends by standing in the doorway.")
                 }
 
                 Section {
