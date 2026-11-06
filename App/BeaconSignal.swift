@@ -17,6 +17,7 @@ final class BeaconSignal: NSObject, ObservableObject, CLLocationManagerDelegate 
     private let manager = CLLocationManager()
     private var watching: BeaconConfig?
     private var constraint: CLBeaconIdentityConstraint?
+    private var loggedFailure = false
 
     override init() {
         super.init()
@@ -57,9 +58,11 @@ final class BeaconSignal: NSObject, ObservableObject, CLLocationManagerDelegate 
     }
 
     /// 0...1 for the signal bars: −95 dBm or weaker is empty, −55 dBm or stronger is full.
-    var strength: Double {
-        guard let reading else { return 0 }
-        return min(max(Double(reading.rssi + 95) / 40, 0), 1)
+    var strength: Double { Self.strength(rssi: reading?.rssi) }
+
+    nonisolated static func strength(rssi: Int?) -> Double {
+        guard let rssi else { return 0 }
+        return min(max(Double(rssi + 95) / 40, 0), 1)
     }
 
     nonisolated func locationManager(
@@ -81,7 +84,13 @@ final class BeaconSignal: NSObject, ObservableObject, CLLocationManagerDelegate 
         didFailRangingFor constraint: CLBeaconIdentityConstraint,
         error: Error
     ) {
-        Task { @MainActor in self.reading = nil }
+        Task { @MainActor in
+            self.reading = nil
+            // Once per launch, so the Activity list shows why Signal says "Not detected".
+            guard !self.loggedFailure else { return }
+            self.loggedFailure = true
+            Shared.log("Signal unavailable: \(error.localizedDescription)")
+        }
     }
 }
 

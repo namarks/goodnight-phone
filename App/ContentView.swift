@@ -8,6 +8,7 @@ struct ContentView: View {
     @StateObject private var signal = BeaconSignal()
     @ObservedObject private var broadcaster = BeaconBroadcaster.shared
     @ObservedObject private var hub = HubMonitor.shared
+    @ObservedObject private var blueCharm = BlueCharm.shared
     @Environment(\.scenePhase) private var scenePhase
 
     @State private var showingPicker = false
@@ -67,20 +68,26 @@ struct ContentView: View {
             }
             .task {
                 signal.watch(model.beacon)
+                blueCharm.watchSignal(of: model.blueCharm)
                 hub.setForeground(true)
                 broadcaster.restore()
                 await model.refreshEverything()
             }
             .onChange(of: model.beacon) { _, beacon in signal.watch(beacon) }
+            .onChange(of: model.blueCharm?.peripheralID) { _, _ in
+                if scenePhase != .background { blueCharm.watchSignal(of: model.blueCharm) }
+            }
             .onChange(of: scenePhase) { _, phase in
                 if phase == .background {
                     signal.stop()
+                    blueCharm.watchSignal(of: nil)
                     hub.setForeground(false)
                     broadcaster.suspend()
                 }
                 guard phase == .active else { return }
                 location.refresh()
                 signal.watch(model.beacon)
+                blueCharm.watchSignal(of: model.blueCharm)
                 hub.setForeground(true)
                 broadcaster.resume()
                 Task { await model.refreshEverything() }
@@ -231,15 +238,21 @@ struct ContentView: View {
                     LabeledContent("Boundary", value: hub.boundary.map { "\($0) dBm" } ?? "Not set")
                     Button(hub.isCalibrating ? "Measuring…" : "Set boundary here") { hub.calibrate() }
                         .disabled(model.isLocked || !hub.isListening || hub.isCalibrating)
+                } else if let pairing = model.blueCharm {
+                    // A Blue Charm's signal comes straight from its Bluetooth advertising.
+                    LabeledContent("Signal") {
+                        HStack(spacing: 6) {
+                            Text(blueCharm.signalRSSI.map { "\($0) dBm" } ?? "Not detected")
+                            Image(systemName: "cellularbars", variableValue: BeaconSignal.strength(rssi: blueCharm.signalRSSI))
+                        }
+                    }
+                    BlueCharmRange(pairing: pairing)
                 } else {
                     LabeledContent("Signal") {
                         HStack(spacing: 6) {
                             Text(signal.label)
                             Image(systemName: "cellularbars", variableValue: signal.strength)
                         }
-                    }
-                    if let pairing = model.blueCharm {
-                        BlueCharmRange(pairing: pairing)
                     }
                 }
             }
@@ -489,11 +502,9 @@ private struct SetupRow: View {
 
 private struct BeaconEditor: View {
     @Environment(\.dismiss) private var dismiss
-    @State private var uuid: String
-    @State private var major: String
-    @State private var minor: String
     @ObservedObject private var blueCharm = BlueCharm.shared
-    private let hadBeacon: Bool
+    private let current: BeaconConfig?
+    @State private var saved: [BeaconConfig]
     private let onSave: (BeaconConfig?) -> Void
     private let onSetUpBlueCharm: (BlueCharmPairing) -> Void
 
@@ -502,12 +513,142 @@ private struct BeaconEditor: View {
         onSave: @escaping (BeaconConfig?) -> Void,
         onSetUpBlueCharm: @escaping (BlueCharmPairing) -> Void
     ) {
+        self.current = current
+        var saved = Shared.savedBeacons
+        if let current, !saved.contains(current) { saved.insert(current, at: 0) }
+        _saved = State(initialValue: saved)
+        self.onSave = onSave
+        self.onSetUpBlueCharm = onSetUpBlueCharm
+    }
+
+    private func pick(_ beacon: BeaconConfig?) {
+        onSave(beacon)
+        dismiss()
+    }
+
+    var body: some View {
+        NavigationStack {
+            Form {
+                if !saved.isEmpty {
+                    Section {
+                        ForEach(saved, id: \.self) { beacon in
+                            Button { pick(beacon) } label: {
+                                HStack {
+                                    VStack(alignment: .leading, spacing: 2) {
+                                        Text(beacon.displayName).foregroundStyle(Color.primary)
+                                        Text(detail(for: beacon)).font(.caption).foregroundStyle(.secondary)
+                                    }
+                                    Spacer()
+                                    if beacon == current {
+                                        Image(systemName: "checkmark").foregroundStyle(Color.accentColor)
+                                    }
+                                }
+                            }
+                            // The current beacon stays listed; switch away first to remove it.
+                            .deleteDisabled(beacon == current)
+                        }
+                        .onDelete { offsets in
+                            saved.remove(atOffsets: offsets)
+                            Shared.savedBeacons = saved
+                        }
+                    } header: {
+                        BrandHeader("Your beacons")
+                    } footer: {
+                        Text("Tap one to switch to it.")
+                    }
+                    .brandRow()
+                }
+
+                Section {
+                    Button {
+                        Task {
+                            guard let pairing = await blueCharm.setUp() else { return }
+                            onSetUpBlueCharm(pairing)
+                            dismiss()
+                        }
+                    } label: {
+                        HStack {
+                            Label("Set up a Blue Charm beacon", systemImage: "dot.radiowaves.left.and.right")
+                            Spacer()
+                            if blueCharm.isBusy { ProgressView() }
+                        }
+                    }
+                    .disabled(blueCharm.isBusy)
+
+                    Button { pick(BeaconConfig.standIn) } label: {
+                        Label("Use a bedroom hub", systemImage: "ipad.and.iphone")
+                    }
+
+                    NavigationLink {
+                        OtherBeaconForm(current: current?.isStandIn == false ? current : nil) { pick($0) }
+                    } label: {
+                        Label("Another iBeacon", systemImage: "number")
+                    }
+                } header: {
+                    BrandHeader("Add a beacon")
+                } footer: {
+                    switch blueCharm.phase {
+                    case .searching: Text("Looking for the Blue Charm…")
+                    case .connecting: Text("Connecting…")
+                    case .writing: Text("Setting it up…")
+                    case .failed(let message): Text(message).foregroundStyle(.red)
+                    case .idle: Text("Blue Charm: plug it into a USB charger by the bed. For the battery one, twist it open, hold the white button inside for 3 seconds until the light flashes red, and close it. Then hold your iPhone next to it and tap Set up.\n\nBedroom hub: a spare iPad or iPhone running Goodnight Phone (turn on Broadcast as bedroom beacon there), or a hub board. You set where the bedroom ends by standing in the doorway.")
+                    }
+                }
+                .brandRow()
+
+                Section {
+                    Link(destination: AppLinks.recommendedBeacon) {
+                        Label("Get the recommended beacon (about $19)", systemImage: "cart")
+                    }
+                    Link(destination: AppLinks.batteryBeacon) {
+                        Label("Or the battery one (about $21)", systemImage: "cart")
+                    }
+                } header: {
+                    BrandHeader("No beacon yet?")
+                } footer: {
+                    Text("The Blue Charm BC-U1 plugs into any USB charger, so there's no battery to run out, and Goodnight Phone sets it up for you. If there's no outlet by the bed, the Blue Charm BC05 is a small puck that runs for years on a coin cell, and Goodnight Phone sets it up the same way. If its battery dies, blocking stops until you replace it.")
+                }
+                .brandRow()
+
+                if current != nil {
+                    Section {
+                        Button("Remove beacon", role: .destructive) { pick(nil) }
+                    }
+                    .brandRow()
+                }
+            }
+            .navigationTitle("Bedroom beacon")
+            .brandForm()
+            .readableWidth()
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Cancel") { dismiss() }
+                }
+            }
+        }
+    }
+
+    private func detail(for beacon: BeaconConfig) -> String {
+        if beacon.isStandIn { return "Spare iPad or iPhone, or a hub board. Set the door boundary again after switching." }
+        if Shared.blueCharm?.uuid == beacon.uuid { return "Set up in Goodnight Phone" }
+        return "iBeacon"
+    }
+}
+
+/// Typing in any other iBeacon's identity.
+private struct OtherBeaconForm: View {
+    @State private var uuid: String
+    @State private var major: String
+    @State private var minor: String
+    private let onSave: (BeaconConfig) -> Void
+
+    init(current: BeaconConfig?, onSave: @escaping (BeaconConfig) -> Void) {
         _uuid = State(initialValue: current?.uuid ?? "")
         _major = State(initialValue: current?.major.map(String.init) ?? "")
         _minor = State(initialValue: current?.minor.map(String.init) ?? "")
-        hadBeacon = current != nil
         self.onSave = onSave
-        self.onSetUpBlueCharm = onSetUpBlueCharm
     }
 
     /// nil when the fields don't make a valid beacon.
@@ -523,106 +664,41 @@ private struct BeaconEditor: View {
             major: majorValue,
             minor: minorValue
         )
-        return config.isValid ? config : nil
+        return config.isValid && !config.isStandIn ? config : nil
     }
 
     var body: some View {
-        NavigationStack {
-            Form {
-                Section {
-                    Button {
-                        Task {
-                            guard let pairing = await blueCharm.setUp() else { return }
-                            onSetUpBlueCharm(pairing)
-                            dismiss()
-                        }
-                    } label: {
-                        HStack {
-                            Text("Set up Blue Charm beacon")
-                            Spacer()
-                            if blueCharm.isBusy { ProgressView() }
-                        }
-                    }
-                    .disabled(blueCharm.isBusy)
-                } header: {
-                    BrandHeader("Blue Charm beacon")
-                } footer: {
-                    switch blueCharm.phase {
-                    case .searching: Text("Looking for it…")
-                    case .connecting: Text("Connecting…")
-                    case .writing: Text("Setting it up…")
-                    case .failed(let message): Text(message).foregroundStyle(.red)
-                    case .idle: Text("Plug it into a USB charger by the bed. For the battery one, twist it open, hold the white button inside for 3 seconds until the light flashes red, and close it. Then hold your iPhone next to it and tap Set up. Goodnight Phone gives it an ID of its own and a bedroom-sized range.")
-                    }
-                }
-                .brandRow()
-
-                Section {
-                    TextField("XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX", text: $uuid, axis: .vertical)
-                        .font(.body.monospaced())
-                        .textInputAutocapitalization(.characters)
-                        .autocorrectionDisabled()
-                } header: {
-                    BrandHeader("Other beacons")
-                } footer: {
-                    Text("Type the beacon's UUID. It's on the box or in the beacon's setup app.")
-                }
-                .brandRow()
-
-                Section {
-                    Link(destination: AppLinks.recommendedBeacon) {
-                        Label("Get the recommended beacon (about $19)", systemImage: "cart")
-                    }
-                    Link(destination: AppLinks.batteryBeacon) {
-                        Label("Or the battery one (about $21)", systemImage: "cart")
-                    }
-                    Button("Use a bedroom hub") {
-                        uuid = BeaconConfig.standIn.uuid
-                        major = ""
-                        minor = ""
-                    }
-                } header: {
-                    BrandHeader("No beacon yet?")
-                } footer: {
-                    Text("The Blue Charm BC-U1 plugs into any USB charger, so there's no battery to run out, and Goodnight Phone sets it up for you. If there's no outlet by the bed, the Blue Charm BC05 is a small puck that runs for years on a coin cell, and Goodnight Phone sets it up the same way. If its battery dies, blocking stops until you replace it.\n\nOr use a bedroom hub: a spare iPad or iPhone running Goodnight Phone (open it there and turn on Broadcast as bedroom beacon), or a hub board. Your phone stays connected to it, and you set where the bedroom ends by standing in the doorway.")
-                }
-                .brandRow()
-
-                Section {
-                    TextField("Major", text: $major).keyboardType(.numberPad)
-                    TextField("Minor", text: $minor).keyboardType(.numberPad)
-                } header: {
-                    BrandHeader("Optional")
-                } footer: {
-                    Text("Only needed if other beacons nearby share the same UUID. Minor needs a major.")
-                }
-                .brandRow()
-
-                if hadBeacon {
-                    Section {
-                        Button("Remove beacon", role: .destructive) {
-                            onSave(nil)
-                            dismiss()
-                        }
-                    }
-                    .brandRow()
-                }
+        Form {
+            Section {
+                TextField("XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX", text: $uuid, axis: .vertical)
+                    .font(.body.monospaced())
+                    .textInputAutocapitalization(.characters)
+                    .autocorrectionDisabled()
+            } header: {
+                BrandHeader("Beacon UUID")
+            } footer: {
+                Text("It's on the box or in the beacon's setup app.")
             }
-            .navigationTitle("Bedroom beacon")
-            .brandForm()
-            .readableWidth()
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel") { dismiss() }
-                }
-                ToolbarItem(placement: .confirmationAction) {
-                    Button("Save") {
-                        onSave(draft)
-                        dismiss()
-                    }
+            .brandRow()
+
+            Section {
+                TextField("Major", text: $major).keyboardType(.numberPad)
+                TextField("Minor", text: $minor).keyboardType(.numberPad)
+            } header: {
+                BrandHeader("Optional")
+            } footer: {
+                Text("Only needed if other beacons nearby share the same UUID. Minor needs a major.")
+            }
+            .brandRow()
+        }
+        .navigationTitle("Another iBeacon")
+        .brandForm()
+        .readableWidth()
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .confirmationAction) {
+                Button("Save") { if let draft { onSave(draft) } }
                     .disabled(draft == nil)
-                }
             }
         }
     }

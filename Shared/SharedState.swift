@@ -28,6 +28,7 @@ enum Shared {
         static let log = "log"
         static let testBlockUntil = "testBlockUntil"
         static let blueCharm = "blueCharm"
+        static let savedBeacons = "savedBeacons"
     }
 
     // MARK: - What to block
@@ -95,6 +96,32 @@ enum Shared {
         return blueCharm
     }
 
+    /// Beacons used before, most recent first, so the beacon screen can switch back with one tap.
+    /// Until the list is first saved, it starts from what was set up before it existed: the
+    /// current beacon and a Blue Charm set up in the app. After that only the saved list counts,
+    /// so a beacon swiped off it stays off.
+    static var savedBeacons: [BeaconConfig] {
+        get {
+            if let saved = decode([BeaconConfig].self, Key.savedBeacons) { return saved }
+            var seeds: [BeaconConfig] = []
+            for seed in [Self.beacon, Self.blueCharm?.beacon].compactMap({ $0 }) where !seeds.contains(seed) {
+                seeds.append(seed)
+            }
+            return seeds
+        }
+        set { encode(newValue, Key.savedBeacons) }
+    }
+
+    /// Call before changing `beacon`. Keeps the beacon being replaced too. Two beacons sharing a
+    /// UUID with different major/minor are different entries.
+    static func remember(switchingTo newBeacon: BeaconConfig?) {
+        var list: [BeaconConfig] = []
+        for beacon in [newBeacon, Self.beacon].compactMap({ $0 }) + savedBeacons where !list.contains(beacon) {
+            list.append(beacon)
+        }
+        savedBeacons = Array(list.prefix(5))
+    }
+
     /// With the spare-device stand-in: signal strength (dBm) measured at the bedroom door.
     /// Stronger than this counts as in the bedroom.
     static var hubBoundary: Int? {
@@ -157,7 +184,7 @@ struct LogEntry: Codable, Identifiable, Hashable {
 
 /// The iBeacon that marks the bedroom. Major/minor are optional and only needed
 /// when several beacons share one UUID (common with vendor default UUIDs).
-struct BeaconConfig: Codable, Equatable {
+struct BeaconConfig: Codable, Hashable {
     var uuid: String
     var major: UInt16?
     var minor: UInt16?
