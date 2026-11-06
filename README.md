@@ -63,7 +63,7 @@ Bedtime starts/ends ──► DeviceActivity wakes the Monitor extension ──�
 | `App/BeaconSignal.swift` | The live Signal row for a real iBeacon: ranges the beacon while the app is open. Display only; blocking follows `RoomMonitor`. |
 | `App/BeaconBroadcaster.swift` | The spare device's side: offers the Bluetooth connection, keeps each phone's bedtime hours, and sends a heartbeat every 2 seconds only during them. |
 | `Extensions/Monitor` | `DeviceActivityMonitor` that calls `Blocker` at bedtime boundaries. |
-| `Extensions/Shield` | The custom "Not in the bedroom" screen. |
+| `Extensions/Shield` | The custom "Goodnight, <app>" screen over blocked apps. |
 | `Extensions/ShieldAction` | The shield's only button, Close. There's no "unlock anyway". |
 
 While apps are blocked, the app's settings are locked too. To change them, leave the room.

@@ -27,6 +27,7 @@ final class AppDelegate: NSObject, UIApplicationDelegate {
         // on every launch for those events to arrive.
         RoomMonitor.shared.start()
         HubMonitor.shared.sync()
+        Brand.styleNavigationBars()
         return true
     }
 
