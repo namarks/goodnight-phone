@@ -67,6 +67,8 @@ struct OnboardingView: View {
             .padding(.horizontal, 24)
             .padding(.bottom, 16)
         }
+        .frame(maxWidth: ReadableWidth.max)
+        .frame(maxWidth: .infinity)
         .background(
             LinearGradient(
                 colors: [Color(red: 0.13, green: 0.12, blue: 0.36), Color(red: 0.03, green: 0.04, blue: 0.14)],

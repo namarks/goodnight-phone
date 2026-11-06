@@ -48,10 +48,12 @@ targets:
         ITSAppUsesNonExemptEncryption: false
         UIApplicationSceneManifest:
           UIApplicationSupportsMultipleScenes: false
-        # Portrait only; opting out of iPad multitasking is required for App Store upload.
-        UIRequiresFullScreen: true
+        # No UIRequiresFullScreen, so the app can run side by side on the iPhone Duo's inner screen.
+        # Landscape is listed for that screen only; AppDelegate keeps phone-sized screens in portrait.
         UISupportedInterfaceOrientations:
           - UIInterfaceOrientationPortrait
+          - UIInterfaceOrientationLandscapeLeft
+          - UIInterfaceOrientationLandscapeRight
         NSLocationWhenInUseUsageDescription: "Goodnight Phone checks whether your iPhone is near your bedroom beacon so it can block the apps you chose at bedtime. Your location never leaves your phone."
         NSLocationAlwaysAndWhenInUseUsageDescription: "Choose “Always” so iOS can wake Goodnight Phone when you walk into the bedroom and block your chosen apps, even when the app is closed. Goodnight Phone only learns whether you’re near your beacon, and nothing leaves your phone."
         NSBluetoothAlwaysUsageDescription: "Goodnight Phone uses Bluetooth to set up your bedroom beacon and its range, or to connect your phone to a spare iPad or iPhone standing in as the beacon and tell how close you are to it."
