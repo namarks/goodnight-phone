@@ -8,6 +8,7 @@ struct ContentView: View {
     @StateObject private var signal = BeaconSignal()
     @ObservedObject private var broadcaster = BeaconBroadcaster.shared
     @ObservedObject private var hub = HubMonitor.shared
+    @ObservedObject private var blueCharm = BlueCharm.shared
     @Environment(\.scenePhase) private var scenePhase
 
     @State private var showingPicker = false
@@ -67,20 +68,26 @@ struct ContentView: View {
             }
             .task {
                 signal.watch(model.beacon)
+                blueCharm.watchSignal(of: model.blueCharm)
                 hub.setForeground(true)
                 broadcaster.restore()
                 await model.refreshEverything()
             }
             .onChange(of: model.beacon) { _, beacon in signal.watch(beacon) }
+            .onChange(of: model.blueCharm?.peripheralID) { _, _ in
+                if scenePhase != .background { blueCharm.watchSignal(of: model.blueCharm) }
+            }
             .onChange(of: scenePhase) { _, phase in
                 if phase == .background {
                     signal.stop()
+                    blueCharm.watchSignal(of: nil)
                     hub.setForeground(false)
                     broadcaster.suspend()
                 }
                 guard phase == .active else { return }
                 location.refresh()
                 signal.watch(model.beacon)
+                blueCharm.watchSignal(of: model.blueCharm)
                 hub.setForeground(true)
                 broadcaster.resume()
                 Task { await model.refreshEverything() }
@@ -231,15 +238,21 @@ struct ContentView: View {
                     LabeledContent("Boundary", value: hub.boundary.map { "\($0) dBm" } ?? "Not set")
                     Button(hub.isCalibrating ? "Measuring…" : "Set boundary here") { hub.calibrate() }
                         .disabled(model.isLocked || !hub.isListening || hub.isCalibrating)
+                } else if let pairing = model.blueCharm {
+                    // A Blue Charm's signal comes straight from its Bluetooth advertising.
+                    LabeledContent("Signal") {
+                        HStack(spacing: 6) {
+                            Text(blueCharm.signalRSSI.map { "\($0) dBm" } ?? "Not detected")
+                            Image(systemName: "cellularbars", variableValue: BeaconSignal.strength(rssi: blueCharm.signalRSSI))
+                        }
+                    }
+                    BlueCharmRange(pairing: pairing)
                 } else {
                     LabeledContent("Signal") {
                         HStack(spacing: 6) {
                             Text(signal.label)
                             Image(systemName: "cellularbars", variableValue: signal.strength)
                         }
-                    }
-                    if let pairing = model.blueCharm {
-                        BlueCharmRange(pairing: pairing)
                     }
                 }
             }

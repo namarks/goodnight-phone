@@ -23,6 +23,9 @@ final class BlueCharm: NSObject, ObservableObject {
     }
 
     @Published private(set) var phase = Phase.idle
+    /// Live signal (dBm) from the paired beacon while the app is open; nil when not heard in
+    /// the last few seconds. Display only, like BeaconSignal: blocking still follows RoomMonitor.
+    @Published private(set) var signalRSSI: Int?
 
     var isBusy: Bool {
         switch phase {
@@ -62,6 +65,9 @@ final class BlueCharm: NSObject, ObservableObject {
     private var bluetoothWaiter: CheckedContinuation<Void, Error>?
     private var connectWaiter: CheckedContinuation<Void, Error>?
     private var seen: [String: KBeacon] = [:]
+    private var signalPeripheralID: String?
+    private var signalHeardAt: Date?
+    private var signalTimer: Timer?
 
     private override init() { super.init() }
 
@@ -114,6 +120,7 @@ final class BlueCharm: NSObject, ObservableObject {
 
     private func run<T>(_ job: () async throws -> T) async -> T? {
         guard !isBusy else { return nil }
+        defer { resumeSignalScan() }
         do {
             let result = try await job()
             phase = .idle
@@ -123,6 +130,41 @@ final class BlueCharm: NSObject, ObservableObject {
             phase = .failed((error as? LocalizedError)?.errorDescription ?? error.localizedDescription)
             return nil
         }
+    }
+
+    // MARK: - Live signal
+
+    /// Scans for the paired beacon while the app is open, for the Signal row. iOS beacon ranging
+    /// (BeaconSignal) has proven unreliable, and the beacon's own Bluetooth advertising is what
+    /// setup already finds it by. Pass nil to stop. Safe to call repeatedly.
+    func watchSignal(of pairing: BlueCharmPairing?) {
+        let id = pairing.map(\.peripheralID).flatMap { $0.isEmpty ? nil : $0 }
+        guard id != signalPeripheralID else { return }
+        // Only touch the SDK if a scan was running: creating it shows the Bluetooth prompt.
+        if signalPeripheralID != nil, !isBusy { manager.stopScanning() }
+        signalTimer?.invalidate()
+        signalTimer = nil
+        signalPeripheralID = id
+        signalHeardAt = nil
+        signalRSSI = nil
+        guard id != nil else { return }
+        signalTimer = Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { _ in
+            MainActor.assumeIsolated {
+                // The beacon advertises several times a second; a few quiet seconds means not heard.
+                if let heard = self.signalHeardAt, Date.now.timeIntervalSince(heard) > 4 {
+                    self.signalRSSI = nil
+                }
+            }
+        }
+        resumeSignalScan()
+    }
+
+    private func resumeSignalScan() {
+        guard signalPeripheralID != nil, !isBusy else { return }
+        manager.delegate = self
+        manager.cbBeaconMgr.delegate = manager
+        // If Bluetooth isn't on yet, onCentralBleStateChange calls this again.
+        if manager.cbBeaconMgr.state == .poweredOn { manager.startScanning() }
     }
 
     // MARK: - Steps
@@ -191,13 +233,19 @@ extension BlueCharm: KBeaconMgrDelegate, ConnStateDelegate {
     nonisolated func onBeaconDiscovered(beacons: [KBeacon]) {
         MainActor.assumeIsolated {
             for beacon in beacons {
-                if let id = beacon.uuidString { seen[id] = beacon }
+                guard let id = beacon.uuidString else { continue }
+                seen[id] = beacon
+                if id == signalPeripheralID, !isBusy {
+                    signalRSSI = Int(beacon.rssi)
+                    signalHeardAt = .now
+                }
             }
         }
     }
 
     nonisolated func onCentralBleStateChange(newState: BLECentralMgrState) {
         MainActor.assumeIsolated {
+            if newState == .PowerOn { resumeSignalScan() }
             guard newState != .Unknown, let waiter = bluetoothWaiter else { return }
             bluetoothWaiter = nil
             waiter.resume()
