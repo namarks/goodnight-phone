@@ -467,12 +467,8 @@ private struct BeaconEditor: View {
         onSetUpBlueCharm: @escaping (BlueCharmPairing) -> Void
     ) {
         self.current = current
-        // Beacons used before this list existed: the current one and a Blue Charm set up here.
         var saved = Shared.savedBeacons
-        for beacon in [current, Shared.blueCharm?.beacon].compactMap({ $0 })
-        where !saved.contains(beacon) {
-            saved.append(beacon)
-        }
+        if let current, !saved.contains(current) { saved.insert(current, at: 0) }
         _saved = State(initialValue: saved)
         self.onSave = onSave
         self.onSetUpBlueCharm = onSetUpBlueCharm
@@ -501,6 +497,8 @@ private struct BeaconEditor: View {
                                     }
                                 }
                             }
+                            // The current beacon stays listed; switch away first to remove it.
+                            .deleteDisabled(beacon == current)
                         }
                         .onDelete { offsets in
                             saved.remove(atOffsets: offsets)

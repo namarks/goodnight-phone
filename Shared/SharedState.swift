@@ -97,14 +97,23 @@ enum Shared {
     }
 
     /// Beacons used before, most recent first, so the beacon screen can switch back with one tap.
+    /// Until the list is first saved, it starts from what was set up before it existed: the
+    /// current beacon and a Blue Charm set up in the app. After that only the saved list counts,
+    /// so a beacon swiped off it stays off.
     static var savedBeacons: [BeaconConfig] {
-        get { decode([BeaconConfig].self, Key.savedBeacons) ?? [] }
+        get {
+            if let saved = decode([BeaconConfig].self, Key.savedBeacons) { return saved }
+            var seeds: [BeaconConfig] = []
+            for seed in [Self.beacon, Self.blueCharm?.beacon].compactMap({ $0 }) where !seeds.contains(seed) {
+                seeds.append(seed)
+            }
+            return seeds
+        }
         set { encode(newValue, Key.savedBeacons) }
     }
 
-    /// Call before changing `beacon`. Keeps the beacon being replaced too, which also covers
-    /// installs from before this list existed. Two beacons sharing a UUID with different
-    /// major/minor are different entries.
+    /// Call before changing `beacon`. Keeps the beacon being replaced too. Two beacons sharing a
+    /// UUID with different major/minor are different entries.
     static func remember(switchingTo newBeacon: BeaconConfig?) {
         var list: [BeaconConfig] = []
         for beacon in [newBeacon, Self.beacon].compactMap({ $0 }) + savedBeacons where !list.contains(beacon) {
