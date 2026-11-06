@@ -73,6 +73,18 @@ final class RoomMonitor {
         setInRoom(false, reason: "beacon settings changed")
     }
 
+    /// Drops CLMonitor's current answer and watches the same beacon again, starting from
+    /// "outside". For when the app can tell the beacon is gone but CLMonitor still says it's
+    /// there (BlueCharm.checkRoom). If the beacon is really in range, iOS reports it again.
+    func recheck() async {
+        guard let monitor, let config = Shared.monitoredBeacon, config == Shared.beacon,
+              let condition = config.condition else { return }
+        await monitor.remove(Self.conditionID)
+        await monitor.add(condition, identifier: Self.conditionID, assuming: .unsatisfied)
+        Shared.log("Beacon not heard for a minute, checking again")
+        setInRoom(false, reason: "beacon not heard")
+    }
+
     /// Re-reads the latest state from Core Location (used when the app comes to the foreground,
     /// so a missed event can never leave you stuck).
     func refreshFromSystem() async {

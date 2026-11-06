@@ -68,6 +68,11 @@ final class BlueCharm: NSObject, ObservableObject {
     private var signalPeripheralID: String?
     private var signalHeardAt: Date?
     private var signalTimer: Timer?
+    /// When the current scan started, so "not heard" can count from it.
+    private var signalScanStartedAt: Date?
+    /// The last time a stuck "in the bedroom" was re-checked (see checkRoom).
+    private var lastRoomRecheck: Date?
+    private var loggedDisagreement = false
 
     private override init() { super.init() }
 
@@ -146,6 +151,7 @@ final class BlueCharm: NSObject, ObservableObject {
         signalTimer = nil
         signalPeripheralID = id
         signalHeardAt = nil
+        signalScanStartedAt = nil
         signalRSSI = nil
         guard id != nil else { return }
         signalTimer = Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { _ in
@@ -154,6 +160,7 @@ final class BlueCharm: NSObject, ObservableObject {
                 if let heard = self.signalHeardAt, Date.now.timeIntervalSince(heard) > 4 {
                     self.signalRSSI = nil
                 }
+                self.checkRoom()
             }
         }
         resumeSignalScan()
@@ -164,7 +171,34 @@ final class BlueCharm: NSObject, ObservableObject {
         manager.delegate = self
         manager.cbBeaconMgr.delegate = manager
         // If Bluetooth isn't on yet, onCentralBleStateChange calls this again.
-        if manager.cbBeaconMgr.state == .poweredOn { manager.startScanning() }
+        if manager.cbBeaconMgr.state == .poweredOn, manager.startScanning() {
+            signalScanStartedAt = .now
+        }
+    }
+
+    /// On a real night CLMonitor kept saying "in the bedroom" for 15+ minutes after the Blue
+    /// Charm was unplugged, app open, while this scan heard nothing. So when the scan hasn't
+    /// heard the paired beacon for a minute and Status still says in the room, RoomMonitor drops
+    /// CLMonitor's answer and watches again from "outside"; if the beacon is really there, iOS
+    /// reports it again within seconds. One re-check per stretch of silence: if iOS says "in"
+    /// again while the scan still hears nothing, the scan is the one that's wrong, so leave it.
+    private func checkRoom() {
+        guard let id = signalPeripheralID, !isBusy, let started = signalScanStartedAt else { return }
+        // Silence counts from the later of the last packet and this scan's start (it restarts
+        // after each range change, when the beacon was just connected and so certainly there).
+        let since = max(started, signalHeardAt ?? started)
+        guard Date.now.timeIntervalSince(since) > 60,
+              Shared.inRoom, Shared.pairedBlueCharm?.peripheralID == id else { return }
+        if let lastRoomRecheck, since < lastRoomRecheck {
+            // Logged once so the Activity list shows which side to doubt.
+            if !loggedDisagreement, Date.now.timeIntervalSince(lastRoomRecheck) > 60 {
+                loggedDisagreement = true
+                Shared.log("iOS still reports the beacon, but Bluetooth doesn't hear it")
+            }
+            return
+        }
+        lastRoomRecheck = .now
+        Task { await RoomMonitor.shared.recheck() }
     }
 
     // MARK: - Steps
@@ -245,7 +279,13 @@ extension BlueCharm: KBeaconMgrDelegate, ConnStateDelegate {
 
     nonisolated func onCentralBleStateChange(newState: BLECentralMgrState) {
         MainActor.assumeIsolated {
-            if newState == .PowerOn { resumeSignalScan() }
+            if newState == .PowerOn {
+                resumeSignalScan()
+            } else {
+                // Not scanning, so silence from here on says nothing about the beacon.
+                signalScanStartedAt = nil
+                signalHeardAt = nil
+            }
             guard newState != .Unknown, let waiter = bluetoothWaiter else { return }
             bluetoothWaiter = nil
             waiter.resume()
