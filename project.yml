@@ -14,7 +14,7 @@ settings:
     CODE_SIGN_STYLE: Automatic
     SWIFT_VERSION: "5.0"
     SWIFT_STRICT_CONCURRENCY: minimal
-    MARKETING_VERSION: "1.0"
+    MARKETING_VERSION: "1.1"
     CURRENT_PROJECT_VERSION: "1"
     TARGETED_DEVICE_FAMILY: "1"
     SUPPORTS_MACCATALYST: "NO"
@@ -43,15 +43,22 @@ targets:
         CFBundleShortVersionString: $(MARKETING_VERSION)
         CFBundleVersion: $(CURRENT_PROJECT_VERSION)
         GoodnightPhoneAppGroup: group.${BUNDLE_PREFIX}.goodnightphone
-        UILaunchScreen: {}
+        # Paper-colored launch screen, so opening the app doesn't flash white or black.
+        UILaunchScreen:
+          UIColorName: Paper
+        # Picture-book heading font (SIL Open Font License, files in App/Fonts). Brand.swift uses them.
+        UIAppFonts:
+          - FrauncesSoft-SemiBold.ttf
         # No encryption beyond what iOS provides, so App Store Connect skips the export compliance question.
         ITSAppUsesNonExemptEncryption: false
         UIApplicationSceneManifest:
           UIApplicationSupportsMultipleScenes: false
-        # Portrait only; opting out of iPad multitasking is required for App Store upload.
-        UIRequiresFullScreen: true
+        # No UIRequiresFullScreen, so the app can run side by side on the iPhone Duo's inner screen.
+        # Landscape is listed for that screen only; AppDelegate keeps phone-sized screens in portrait.
         UISupportedInterfaceOrientations:
           - UIInterfaceOrientationPortrait
+          - UIInterfaceOrientationLandscapeLeft
+          - UIInterfaceOrientationLandscapeRight
         NSLocationWhenInUseUsageDescription: "Goodnight Phone checks whether your iPhone is near your bedroom beacon so it can block the apps you chose at bedtime. Your location never leaves your phone."
         NSLocationAlwaysAndWhenInUseUsageDescription: "Choose “Always” so iOS can wake Goodnight Phone when you walk into the bedroom and block your chosen apps, even when the app is closed. Goodnight Phone only learns whether you’re near your beacon, and nothing leaves your phone."
         NSBluetoothAlwaysUsageDescription: "Goodnight Phone uses Bluetooth to set up your bedroom beacon and its range, or to connect your phone to a spare iPad or iPhone standing in as the beacon and tell how close you are to it."
@@ -128,7 +135,7 @@ targets:
         com.apple.security.application-groups:
           - group.${BUNDLE_PREFIX}.goodnightphone
 
-  # The custom "Not in the bedroom" screen over blocked apps.
+  # The custom "Goodnight, <app>" screen over blocked apps.
   GoodnightPhoneShield:
     type: app-extension
     platform: iOS

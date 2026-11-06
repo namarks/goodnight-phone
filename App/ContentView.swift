@@ -52,6 +52,8 @@ struct ContentView: View {
                 aboutSection
             }
             .navigationTitle("Goodnight Phone")
+            .brandForm()
+            .readableWidth()
             .familyActivityPicker(isPresented: $showingPicker, selection: $pickerSelection)
             .onChange(of: showingPicker) { _, isShowing in
                 if !isShowing { model.saveSelection(pickerSelection) }
@@ -134,12 +136,13 @@ struct ContentView: View {
                 ) { hub.calibrate() }
             }
         } header: {
-            Text("Setup")
+            BrandHeader("Setup")
         } footer: {
             Text(usesStandIn
                  ? "Your phone stays connected to the spare device. During bedtime hours it checks the signal every 2 seconds, even when Goodnight Phone is closed. Nothing is blocked until the boundary is set."
                  : "“Always” location lets iOS wake Goodnight Phone when you walk into the bedroom, even when the app is closed. Beacon detection needs Precise Location.")
         }
+        .brandRow()
     }
 
     private var appsSection: some View {
@@ -163,10 +166,11 @@ struct ContentView: View {
             Button("Choose apps…") { openPicker() }
                 .disabled(!model.screenTimeApproved || model.isLocked)
         } header: {
-            Text("Blocked in the bedroom")
+            BrandHeader("The goodnight list")
         } footer: {
             appsFooter
         }
+        .brandRow()
     }
 
     private var tryItSection: some View {
@@ -178,7 +182,7 @@ struct ContentView: View {
                     .disabled(model.isBlocking)
             }
         } header: {
-            Text("Try it now")
+            BrandHeader("Try it now")
         } footer: {
             if let end = model.testEndsAt {
                 Text("Test running. Open a blocked app to see the screen. It ends at \(end.formatted(date: .omitted, time: .shortened)), or tap Stop test.")
@@ -186,6 +190,7 @@ struct ContentView: View {
                 Text("See what blocking looks like without a beacon. You can stop the test early; that never lifts a real bedtime block.")
             }
         }
+        .brandRow()
     }
 
     private var hoursSection: some View {
@@ -200,12 +205,13 @@ struct ContentView: View {
                 }
             }
         } header: {
-            Text("When")
+            BrandHeader("When")
         } footer: {
             Text(model.schedule.limitToHours
                  ? "Tap a day to take that night off. A night runs from its start into the next morning, so Friday is Friday evening to Saturday morning. Blocking starts at bedtime even if you're already in bed."
                  : "Apps are blocked any time you're in the bedroom.")
         }
+        .brandRow()
         .disabled(model.isLocked)
     }
 
@@ -240,7 +246,7 @@ struct ContentView: View {
             Button(model.beacon == nil ? "Add beacon…" : "Change beacon…") { editingBeacon = true }
                 .disabled(model.isLocked)
         } header: {
-            Text("Bedroom beacon")
+            BrandHeader("Bedroom beacon")
         } footer: {
             Text(usesStandIn
                  ? "Stronger than the boundary counts as in the bedroom. Set it standing in the bedroom doorway, not next to the spare device; anywhere weaker, like the kitchen, counts as outside. During bedtime hours, walking in registers within about 10 seconds and leaving within about 15, even with the app closed, so a weak moment by the bed doesn't lift the block."
@@ -248,6 +254,7 @@ struct ContentView: View {
                  ? "Signal is live while the app is open. Blocking follows Status, and iOS takes about 30 seconds to register that you've left. If it still says “In the bedroom” after you step out of the room, tap Shorter; if it says “Outside” by the bed, tap Longer. For 15 minutes after setup these work even while apps are blocked."
                  : "Signal is live while the app is open. Blocking follows Status, and iOS takes about 30 seconds to register that you've left. If it still says “In the bedroom” after you step out of the room, turn the beacon's transmit power down.")
         }
+        .brandRow()
     }
 
     /// Shown at the top while this device is the stand-in beacon. Kept separate from
@@ -262,6 +269,7 @@ struct ContentView: View {
         } footer: {
             Text("This device is standing in for the bedroom beacon. Keep Goodnight Phone open, plugged in, by the bed.")
         }
+        .brandRow()
     }
 
     private var standInSection: some View {
@@ -271,16 +279,17 @@ struct ContentView: View {
             }
         } header: {
             // Once this phone has a beacon, "No beacon yet?" reads as if setup isn't finished.
-            Text(model.beacon == nil ? "No beacon yet?" : "Spare iPad or iPhone")
+            BrandHeader(model.beacon == nil ? "No beacon yet?" : "Spare iPad or iPhone")
         } footer: {
             Text(model.beacon == nil
                  ? "Turn this on in Goodnight Phone on a spare iPad or iPhone to stand in for the beacon while you test."
                  : "Only for a spare device that stays by the bed as the bedroom hub. Your bedroom beacon is set up above.")
         }
+        .brandRow()
     }
 
     private var activitySection: some View {
-        Section("Activity") {
+        Section {
             if model.log.isEmpty {
                 Text("Nothing yet").foregroundStyle(.secondary)
             }
@@ -292,17 +301,21 @@ struct ContentView: View {
                         .foregroundStyle(.secondary)
                 }
             }
+        } header: {
+            BrandHeader("Activity")
         }
+        .brandRow()
     }
 
     private var aboutSection: some View {
         Section {
             Link("Privacy policy", destination: AppLinks.privacyPolicy)
         } header: {
-            Text("About")
+            BrandHeader("About")
         } footer: {
             Text("Everything Goodnight Phone stores stays on this iPhone. In an emergency, turn Goodnight Phone off in Settings → Screen Time → Apps with Screen Time Access to lift every block.")
         }
+        .brandRow()
     }
 
     @ViewBuilder private var appsFooter: some View {
@@ -369,19 +382,29 @@ private struct StatusCard: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             Image(systemName: icon)
-                .font(.system(size: 34, weight: .semibold))
+                .font(.system(size: 30, weight: .semibold))
                 .symbolRenderingMode(.hierarchical)
+                .foregroundStyle(iconColor)
                 .padding(.bottom, 4)
-            Text(title).font(.title2.bold())
-            Text(subtitle).font(.subheadline).opacity(0.85)
+            Text(title)
+                .font(Brand.heading(28))
+            Text(subtitle)
+                .font(.system(.subheadline, design: .rounded).weight(.semibold))
+                .opacity(0.9)
         }
-        .foregroundStyle(.white)
+        .foregroundStyle(textColor)
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(20)
+        .background(fill, in: RoundedRectangle(cornerRadius: 22, style: .continuous))
+        .overlay(RoundedRectangle(cornerRadius: 22, style: .continuous).strokeBorder(Brand.fixedInk, lineWidth: 2.5))
+        // A solid offset shadow, like ink on a printed page.
         .background(
-            LinearGradient(colors: colors, startPoint: .topLeading, endPoint: .bottomTrailing),
-            in: RoundedRectangle(cornerRadius: 22, style: .continuous)
+            RoundedRectangle(cornerRadius: 22, style: .continuous)
+                .fill(Brand.fixedInk)
+                .offset(x: 4, y: 4)
         )
+        .padding(.trailing, 4)
+        .padding(.bottom, 4)
         .animation(.easeInOut, value: isBlocking)
     }
 
@@ -393,7 +416,7 @@ private struct StatusCard: View {
     }
 
     private var title: String {
-        if isBlocking { return "Apps blocked" }
+        if isBlocking { return "Apps asleep" }
         if !setupDone { return "Finish setup" }
         if inRoom { return "In the bedroom" }
         return "Not in the bedroom"
@@ -401,9 +424,9 @@ private struct StatusCard: View {
 
     private var subtitle: String {
         if isBlocking, let testEndsAt {
-            return "Test block. They unlock at \(testEndsAt.formatted(date: .omitted, time: .shortened))."
+            return "Test block. They wake up at \(testEndsAt.formatted(date: .omitted, time: .shortened))."
         }
-        if isBlocking { return "They unlock when you leave the room." }
+        if isBlocking { return "They wake up when you leave the room." }
         if !setupDone { return "A few permissions and a beacon, then it runs on its own." }
         if anyTime { return "Apps block whenever you walk in." }
         guard let tonight else {
@@ -413,11 +436,22 @@ private struct StatusCard: View {
         return "Apps block when you walk in, \(tonight)."
     }
 
-    private var colors: [Color] {
-        if isBlocking { return [Color(red: 0.13, green: 0.12, blue: 0.36), Color(red: 0.03, green: 0.04, blue: 0.14)] }
-        if !setupDone { return [Color(white: 0.35), Color(white: 0.22)] }
-        if inRoom { return [Color(red: 0.33, green: 0.27, blue: 0.62), Color(red: 0.16, green: 0.14, blue: 0.38)] }
-        return [Color(red: 0.16, green: 0.52, blue: 0.78), Color(red: 0.10, green: 0.30, blue: 0.55)]
+    /// Night window when apps are asleep, nursery green in the bedroom, moon yellow outside it.
+    private var fill: Color {
+        if isBlocking { return Brand.night }
+        if !setupDone { return Brand.cream }
+        if inRoom { return Color(red: 0x2F / 255, green: 0x6B / 255, blue: 0x45 / 255) }
+        return Color(red: 0xF2 / 255, green: 0xC8 / 255, blue: 0x49 / 255)
+    }
+
+    private var textColor: Color {
+        isBlocking || (setupDone && inRoom) ? Brand.cream : Brand.fixedInk
+    }
+
+    private var iconColor: Color {
+        if isBlocking { return Color(red: 0xF2 / 255, green: 0xC8 / 255, blue: 0x49 / 255) }
+        if setupDone && !inRoom { return Color(red: 0xC2 / 255, green: 0x3B / 255, blue: 0x2E / 255) }
+        return textColor
     }
 }
 
@@ -505,10 +539,11 @@ private struct BeaconEditor: View {
                             Shared.savedBeacons = saved
                         }
                     } header: {
-                        Text("Your beacons")
+                        BrandHeader("Your beacons")
                     } footer: {
                         Text("Tap one to switch to it.")
                     }
+                    .brandRow()
                 }
 
                 Section {
@@ -537,34 +572,42 @@ private struct BeaconEditor: View {
                         Label("Another iBeacon", systemImage: "number")
                     }
                 } header: {
-                    Text("Add a beacon")
+                    BrandHeader("Add a beacon")
                 } footer: {
                     switch blueCharm.phase {
                     case .searching: Text("Looking for the Blue Charm…")
                     case .connecting: Text("Connecting…")
                     case .writing: Text("Setting it up…")
                     case .failed(let message): Text(message).foregroundStyle(.red)
-                    case .idle: Text("Blue Charm: plug it into a USB charger by the bed, hold your iPhone next to it, and tap Set up.\n\nBedroom hub: a spare iPad or iPhone running Goodnight Phone (turn on Broadcast as bedroom beacon there), or a hub board. You set where the bedroom ends by standing in the doorway.")
+                    case .idle: Text("Blue Charm: plug it into a USB charger by the bed. For the battery one, twist it open, hold the white button inside for 3 seconds until the light flashes red, and close it. Then hold your iPhone next to it and tap Set up.\n\nBedroom hub: a spare iPad or iPhone running Goodnight Phone (turn on Broadcast as bedroom beacon there), or a hub board. You set where the bedroom ends by standing in the doorway.")
                     }
                 }
+                .brandRow()
 
                 Section {
                     Link(destination: AppLinks.recommendedBeacon) {
                         Label("Get the recommended beacon (about $19)", systemImage: "cart")
                     }
+                    Link(destination: AppLinks.batteryBeacon) {
+                        Label("Or the battery one (about $21)", systemImage: "cart")
+                    }
                 } header: {
-                    Text("No beacon yet?")
+                    BrandHeader("No beacon yet?")
                 } footer: {
-                    Text("The Blue Charm BC-U1 plugs into any USB charger, so there's no battery to run out, and Goodnight Phone sets it up for you.")
+                    Text("The Blue Charm BC-U1 plugs into any USB charger, so there's no battery to run out, and Goodnight Phone sets it up for you. If there's no outlet by the bed, the Blue Charm BC05 is a small puck that runs for years on a coin cell, and Goodnight Phone sets it up the same way. If its battery dies, blocking stops until you replace it.")
                 }
+                .brandRow()
 
                 if current != nil {
                     Section {
                         Button("Remove beacon", role: .destructive) { pick(nil) }
                     }
+                    .brandRow()
                 }
             }
             .navigationTitle("Bedroom beacon")
+            .brandForm()
+            .readableWidth()
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
@@ -619,21 +662,25 @@ private struct OtherBeaconForm: View {
                     .textInputAutocapitalization(.characters)
                     .autocorrectionDisabled()
             } header: {
-                Text("Beacon UUID")
+                BrandHeader("Beacon UUID")
             } footer: {
                 Text("It's on the box or in the beacon's setup app.")
             }
+            .brandRow()
 
             Section {
                 TextField("Major", text: $major).keyboardType(.numberPad)
                 TextField("Minor", text: $minor).keyboardType(.numberPad)
             } header: {
-                Text("Optional")
+                BrandHeader("Optional")
             } footer: {
                 Text("Only needed if other beacons nearby share the same UUID. Minor needs a major.")
             }
+            .brandRow()
         }
         .navigationTitle("Another iBeacon")
+        .brandForm()
+        .readableWidth()
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .confirmationAction) {
@@ -717,8 +764,8 @@ private struct NightToggles: View {
                     Text(Calendar.current.veryShortWeekdaySymbols[weekday - 1])
                         .font(.subheadline.weight(.semibold))
                         .frame(width: 36, height: 36)
-                        .foregroundStyle(isOn ? Color.white : Color.primary)
-                        .background(Circle().fill(isOn ? Color.accentColor : Color(.tertiarySystemFill)))
+                        .foregroundStyle(isOn ? Brand.cream : Color.primary)
+                        .background(Circle().fill(isOn ? Brand.red : Color(.tertiarySystemFill)))
                 }
                 // Borderless, or a tap anywhere in the row would press every button.
                 .buttonStyle(.borderless)
@@ -746,8 +793,11 @@ private struct NightsView: View {
             } footer: {
                 Text("Give a night its own hours, or take it off. Nights on usual hours follow Starts and Ends.")
             }
+            .brandRow()
         }
         .navigationTitle("Hours by night")
+        .brandForm()
+        .readableWidth()
         .navigationBarTitleDisplayMode(.inline)
         .disabled(model.isLocked)
     }
@@ -789,14 +839,18 @@ private struct NightEditor: View {
                     Text("Nothing is blocked from \(dayName) evening through \(nextDayName) morning.")
                 }
             }
+            .brandRow()
             if case .hours = night {
                 Section {
                     DatePicker("Starts", selection: timeBinding(start: true), displayedComponents: .hourAndMinute)
                     DatePicker("Ends", selection: timeBinding(start: false), displayedComponents: .hourAndMinute)
                 }
+                .brandRow()
             }
         }
         .navigationTitle(dayName)
+        .brandForm()
+        .readableWidth()
         .navigationBarTitleDisplayMode(.inline)
         .disabled(model.isLocked)
     }
@@ -860,8 +914,11 @@ private struct StandInBeaconView: View {
             } footer: {
                 Text("Leave Goodnight Phone open with the device plugged in by the bed. iOS only keeps this running while the app is on screen, so the display stays on while this is on. On your iPhone, open the bedroom beacon settings, tap Use a bedroom hub, then set the bedroom boundary.")
             }
+            .brandRow()
         }
         .navigationTitle("Stand-in beacon")
+        .brandForm()
+        .readableWidth()
         .navigationBarTitleDisplayMode(.inline)
     }
 }
