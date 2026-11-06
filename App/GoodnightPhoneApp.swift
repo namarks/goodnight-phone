@@ -29,4 +29,16 @@ final class AppDelegate: NSObject, UIApplicationDelegate {
         HubMonitor.shared.sync()
         return true
     }
+
+    /// Info.plist lists landscape for the iPhone Duo's inner screen; phone-sized screens
+    /// (including the Duo folded) stay portrait-only as before.
+    func application(
+        _ application: UIApplication,
+        supportedInterfaceOrientationsFor window: UIWindow?
+    ) -> UIInterfaceOrientationMask {
+        guard let screen = window?.windowScene?.screen else { return .portrait }
+        let shortSide = min(screen.bounds.width, screen.bounds.height)
+        // Every phone screen is under 500 pt on its short side; the Duo's inner screen is well over 600.
+        return shortSide >= 600 ? .allButUpsideDown : .portrait
+    }
 }

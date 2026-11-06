@@ -52,6 +52,7 @@ struct ContentView: View {
                 aboutSection
             }
             .navigationTitle("Goodnight Phone")
+            .readableWidth()
             .familyActivityPicker(isPresented: $showingPicker, selection: $pickerSelection)
             .onChange(of: showingPicker) { _, isShowing in
                 if !isShowing { model.saveSelection(pickerSelection) }
@@ -570,6 +571,7 @@ private struct BeaconEditor: View {
                 }
             }
             .navigationTitle("Bedroom beacon")
+            .readableWidth()
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
@@ -691,6 +693,7 @@ private struct NightsView: View {
             }
         }
         .navigationTitle("Hours by night")
+        .readableWidth()
         .navigationBarTitleDisplayMode(.inline)
         .disabled(model.isLocked)
     }
@@ -740,6 +743,7 @@ private struct NightEditor: View {
             }
         }
         .navigationTitle(dayName)
+        .readableWidth()
         .navigationBarTitleDisplayMode(.inline)
         .disabled(model.isLocked)
     }
@@ -805,6 +809,7 @@ private struct StandInBeaconView: View {
             }
         }
         .navigationTitle("Stand-in beacon")
+        .readableWidth()
         .navigationBarTitleDisplayMode(.inline)
     }
 }
