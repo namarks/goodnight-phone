@@ -55,8 +55,11 @@ targets:
           UIApplicationSupportsMultipleScenes: false
         # No UIRequiresFullScreen, so the app can run side by side on the iPhone Duo's inner screen.
         # Landscape is listed for that screen only; AppDelegate keeps phone-sized screens in portrait.
+        # App Store validation requires all four orientations for iPad multitasking without UIRequiresFullScreen;
+        # AppDelegate still never allows upside down.
         UISupportedInterfaceOrientations:
           - UIInterfaceOrientationPortrait
+          - UIInterfaceOrientationPortraitUpsideDown
           - UIInterfaceOrientationLandscapeLeft
           - UIInterfaceOrientationLandscapeRight
         NSLocationWhenInUseUsageDescription: "Goodnight Phone checks whether your iPhone is near your bedroom beacon so it can block the apps you chose at bedtime. Your location never leaves your phone."
