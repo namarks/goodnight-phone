@@ -563,58 +563,64 @@ private struct BeaconEditor: View {
                     .brandRow()
                 }
 
+                // Named by the device itself, since a new user won't know our terms
+                // ("bedroom hub") for each device. Each row opens that device's own setup steps.
                 Section {
                     NavigationLink {
                         HubSetupView(isCurrent: current?.isStandIn == true) { pick(BeaconConfig.standIn) }
                     } label: {
-                        Label("Use a bedroom hub", systemImage: "dot.radiowaves.left.and.right")
+                        DeviceRow(
+                            "Seeed XIAO board",
+                            detail: "A thumbnail-sized board. The most precise.",
+                            systemImage: "cpu"
+                        )
                     }
 
-                    Button {
-                        Task {
-                            guard let pairing = await blueCharm.setUp() else { return }
+                    NavigationLink {
+                        BlueCharmSetupView { pairing in
                             onSetUpBlueCharm(pairing)
                             dismiss()
                         }
                     } label: {
-                        HStack {
-                            Label("Set up a Blue Charm beacon", systemImage: "antenna.radiowaves.left.and.right")
-                            Spacer()
-                            if blueCharm.isBusy { ProgressView() }
-                        }
+                        DeviceRow(
+                            "Blue Charm beacon",
+                            detail: "A USB stick (BC-U1) or a round puck (BC05).",
+                            systemImage: "antenna.radiowaves.left.and.right"
+                        )
                     }
-                    .disabled(blueCharm.isBusy)
+
+                    NavigationLink {
+                        SpareDeviceSetupView(isCurrent: current?.isStandIn == true) { pick(BeaconConfig.standIn) }
+                    } label: {
+                        DeviceRow(
+                            "Spare iPad or iPhone",
+                            detail: "Running Goodnight Phone, left on by the bed.",
+                            systemImage: "ipad.and.iphone"
+                        )
+                    }
 
                     NavigationLink {
                         OtherBeaconForm(current: current?.isStandIn == false ? current : nil) { pick($0) }
                     } label: {
-                        Label("Another iBeacon", systemImage: "number")
+                        DeviceRow("Another iBeacon", detail: "Type in its UUID.", systemImage: "number")
                     }
 
-                    NavigationLink { BeaconPlacementGuide() } label: {
-                        Label("Where to put it", systemImage: "lightbulb")
+                    NavigationLink { NoBeaconView() } label: {
+                        DeviceRow(
+                            "I don't have one yet",
+                            detail: "See which one we recommend.",
+                            systemImage: "cart"
+                        )
                     }
                 } header: {
-                    BrandHeader("Add a beacon")
-                } footer: {
-                    switch blueCharm.phase {
-                    case .searching: Text("Looking for the Blue Charm…")
-                    case .connecting: Text("Connecting…")
-                    case .writing: Text("Setting it up…")
-                    case .failed(let message): Text(message).foregroundStyle(.red)
-                    case .idle, .holding: Text("Blue Charm: plug it into a USB charger by the bed. For the battery one, twist it open, hold the white button inside for 3 seconds until the light flashes red, and close it. Then hold your iPhone next to it and tap Set up.")
-                    }
+                    BrandHeader("Which beacon do you have?")
                 }
                 .brandRow()
 
                 Section {
-                    Link(destination: AppLinks.chooseBeacon) {
-                        Label("Choose a beacon", systemImage: "cart")
+                    NavigationLink { BeaconPlacementGuide() } label: {
+                        Label("Where to put it", systemImage: "lightbulb")
                     }
-                } header: {
-                    BrandHeader("No beacon yet?")
-                } footer: {
-                    Text("The bedroom hub is the most precise: you set exactly where the bedroom ends, and leaving lifts the block within seconds. It's about $15 in parts and needs a one-time install from a computer. No computer? The Blue Charm BC-U1 plugs into any USB charger and Goodnight Phone sets it up for you, but iOS decides when you've left, which can take a minute or more.")
                 }
                 .brandRow()
 
@@ -638,7 +644,7 @@ private struct BeaconEditor: View {
     }
 
     private func detail(for beacon: BeaconConfig) -> String {
-        if beacon.isStandIn { return "Bedroom hub. Set the door boundary again after switching." }
+        if beacon.isStandIn { return "XIAO board or spare iPad/iPhone. Set the door boundary again after switching." }
         if Shared.blueCharm?.uuid == beacon.uuid { return "Set up in Goodnight Phone" }
         return "iBeacon"
     }
@@ -650,11 +656,26 @@ private struct BeaconEditor: View {
 private struct HubSetupView: View {
     let isCurrent: Bool
     let onUse: () -> Void
+    @StateObject private var finder = HubFinder()
 
     var body: some View {
         Form {
+            // Coming back from the computer, this is the first thing on screen.
+            if finder.state == .found && !isCurrent {
+                Section {
+                    Button(action: onUse) {
+                        Label("Use this board", systemImage: "checkmark.circle.fill").bold()
+                    }
+                } header: {
+                    BrandHeader("Found your board")
+                } footer: {
+                    Text("If it's still plugged into the computer, move it to a charger by your bed first. After you tap Use this board, stand in the bedroom doorway and tap Set boundary here.")
+                }
+                .brandRow()
+            }
+
             Section {
-                Text("A thumbnail-sized Bluetooth board that stays plugged in by your bed. You set exactly where the bedroom ends by standing in the doorway, and walking out lifts the block within seconds. One hub works for up to three phones, each with its own bedtime.")
+                Text("A thumbnail-sized Bluetooth board that stays plugged in by your bed as your bedroom hub. You set exactly where the bedroom ends by standing in the doorway, and walking out lifts the block within seconds. One board works for up to three phones, each with its own bedtime.")
             }
             .brandRow()
 
@@ -681,16 +702,198 @@ private struct HubSetupView: View {
             .brandRow()
 
             Section {
-                Button(isCurrent ? "This is your bedroom beacon" : "Use the bedroom hub", action: onUse)
+                HubFinderRow(finder: finder, thing: "board")
+                Button(isCurrent ? "This is your bedroom beacon" : "Use this board", action: onUse)
                     .disabled(isCurrent)
             } header: {
                 BrandHeader("3. Plug it in by the bed")
             } footer: {
-                Text("Put it on the far side of the bed from the door. Then tap the button above, stand in the bedroom doorway and tap Set boundary here. A spare iPad or iPhone running Goodnight Phone with Broadcast as bedroom beacon on works as a hub too.")
+                Text("Put it on the far side of the bed from the door. Your iPhone finds it on its own once it's installed and plugged in. Then tap Use this board, stand in the bedroom doorway and tap Set boundary here.")
             }
             .brandRow()
         }
-        .navigationTitle("Bedroom hub")
+        .animation(.default, value: finder.state)
+        .navigationTitle("Seeed XIAO board")
+        .brandForm()
+        .readableWidth()
+        .navigationBarTitleDisplayMode(.inline)
+        .onAppear { finder.start() }
+        .onDisappear { finder.stop() }
+    }
+}
+
+/// Whether the hub's setup screen can hear it yet.
+private struct HubFinderRow: View {
+    @ObservedObject var finder: HubFinder
+    /// "board" or "device".
+    let thing: String
+
+    var body: some View {
+        LabeledContent("Your \(thing)") {
+            switch finder.state {
+            case .idle, .searching:
+                HStack(spacing: 6) {
+                    Text("Looking…")
+                    ProgressView()
+                }
+            case .found:
+                Label("Found", systemImage: "checkmark.circle.fill")
+                    .foregroundStyle(Color.accentColor)
+            case .bluetoothOff:
+                Text("Turn on Bluetooth")
+            case .notAllowed:
+                Text("Allow Bluetooth in Settings")
+            }
+        }
+    }
+}
+
+/// A row in "Which beacon do you have?": the device's name, with a line on how to recognize it.
+private struct DeviceRow: View {
+    let title: String
+    let detail: String
+    let systemImage: String
+
+    init(_ title: String, detail: String, systemImage: String) {
+        self.title = title
+        self.detail = detail
+        self.systemImage = systemImage
+    }
+
+    var body: some View {
+        Label {
+            VStack(alignment: .leading, spacing: 2) {
+                Text(title).foregroundStyle(Color.primary)
+                Text(detail).font(.caption).foregroundStyle(.secondary)
+            }
+        } icon: {
+            Image(systemName: systemImage)
+        }
+    }
+}
+
+/// Setting up a Blue Charm BC-U1 or BC05: Goodnight Phone writes its settings over Bluetooth.
+private struct BlueCharmSetupView: View {
+    @ObservedObject private var blueCharm = BlueCharm.shared
+    let onDone: (BlueCharmPairing) -> Void
+
+    var body: some View {
+        Form {
+            Section {
+                Text("Plug the USB stick (BC-U1) into a USB charger by the bed.")
+            } header: {
+                BrandHeader("1. Turn it on")
+            } footer: {
+                Text("For the round battery puck (BC05), twist it open, hold the white button inside for 3 seconds until the light flashes red, and close it.")
+            }
+            .brandRow()
+
+            Section {
+                Button {
+                    Task {
+                        guard let pairing = await blueCharm.setUp() else { return }
+                        onDone(pairing)
+                    }
+                } label: {
+                    HStack {
+                        Text("Set up")
+                        Spacer()
+                        if blueCharm.isBusy { ProgressView() }
+                    }
+                }
+                .disabled(blueCharm.isBusy)
+            } header: {
+                BrandHeader("2. Hold your iPhone next to it")
+            } footer: {
+                switch blueCharm.phase {
+                case .searching: Text("Looking for the Blue Charm…")
+                case .connecting: Text("Connecting…")
+                case .writing: Text("Setting it up…")
+                case .failed(let message): Text(message).foregroundStyle(.red)
+                case .idle, .holding: Text("Goodnight Phone finds it and sets it up, no other app needed.")
+                }
+            }
+            .brandRow()
+        }
+        .navigationTitle("Blue Charm beacon")
+        .brandForm()
+        .readableWidth()
+        .navigationBarTitleDisplayMode(.inline)
+    }
+}
+
+/// Using a spare iPad or iPhone as the bedroom hub.
+private struct SpareDeviceSetupView: View {
+    let isCurrent: Bool
+    let onUse: () -> Void
+    @StateObject private var finder = HubFinder()
+
+    var body: some View {
+        Form {
+            Section {
+                Text("Install Goodnight Phone on it, open it, tap Broadcast as bedroom beacon and turn it on.")
+            } header: {
+                BrandHeader("1. On the spare device")
+            } footer: {
+                Text("Leave it plugged in by the bed with Goodnight Phone open. iOS only keeps this running while the app is on screen, so the screen stays on.")
+            }
+            .brandRow()
+
+            Section {
+                HubFinderRow(finder: finder, thing: "spare device")
+                Button(isCurrent ? "This is your bedroom beacon" : "Use the spare device", action: onUse)
+                    .disabled(isCurrent)
+            } header: {
+                BrandHeader("2. On this iPhone")
+            } footer: {
+                Text("Then stand in the bedroom doorway and tap Set boundary here.")
+            }
+            .brandRow()
+        }
+        .navigationTitle("Spare iPad or iPhone")
+        .brandForm()
+        .readableWidth()
+        .navigationBarTitleDisplayMode(.inline)
+        .onAppear { finder.start() }
+        .onDisappear { finder.stop() }
+    }
+}
+
+/// "I don't have one yet": which beacon to get. Buying happens on the website (it holds the
+/// Amazon links and disclosure), never in the app.
+private struct NoBeaconView: View {
+    var body: some View {
+        Form {
+            Section {
+                Text("A thumbnail-sized board that plugs into a USB charger by your bed. You set exactly where the bedroom ends by standing in the doorway, and walking out lifts the block within seconds. One board works for up to three phones.")
+                Link(destination: AppLinks.chooseHub) {
+                    Label("Get the parts (about $15)", systemImage: "cart")
+                }
+            } header: {
+                BrandHeader("We recommend: Seeed XIAO board")
+            } footer: {
+                Text("Needs a one-time install from a Mac or PC, about a minute.")
+            }
+            .brandRow()
+
+            Section {
+                Text("A USB stick that plugs into any USB charger. Goodnight Phone sets it up itself, but it's less precise: iOS decides when you've left, which can take a minute or more.")
+                Link(destination: AppLinks.chooseBlueCharm) {
+                    Label("Get a Blue Charm (about $19)", systemImage: "cart")
+                }
+            } header: {
+                BrandHeader("No computer? Blue Charm BC-U1")
+            }
+            .brandRow()
+
+            Section {
+                Text("It can be your beacon for free. Go back and pick Spare iPad or iPhone.")
+            } header: {
+                BrandHeader("Have a spare iPad or iPhone?")
+            }
+            .brandRow()
+        }
+        .navigationTitle("Get a beacon")
         .brandForm()
         .readableWidth()
         .navigationBarTitleDisplayMode(.inline)
@@ -986,7 +1189,7 @@ private struct StandInBeaconView: View {
                 ))
                 LabeledContent("Status", value: broadcaster.label)
             } footer: {
-                Text("Leave Goodnight Phone open with the device plugged in by the bed. iOS only keeps this running while the app is on screen, so the display stays on while this is on. On your iPhone, open the bedroom beacon settings, tap Use a bedroom hub, then Use the bedroom hub, then set the bedroom boundary.")
+                Text("Leave Goodnight Phone open with the device plugged in by the bed. iOS only keeps this running while the app is on screen, so the display stays on while this is on. On your iPhone, open the bedroom beacon settings, tap Add beacon… (or Change beacon…), then Spare iPad or iPhone, then Use the spare device, then set the bedroom boundary.")
             }
             .brandRow()
         }
