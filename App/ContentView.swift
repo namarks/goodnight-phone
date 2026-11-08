@@ -563,7 +563,7 @@ private struct BeaconEditor: View {
                     .brandRow()
                 }
 
-                // Named by what's physically by the bed, since a new user won't know our terms
+                // Named by the device itself, since a new user won't know our terms
                 // ("bedroom hub") for each device. Each row opens that device's own setup steps.
                 Section {
                     NavigationLink {
@@ -605,17 +605,15 @@ private struct BeaconEditor: View {
                         DeviceRow("Another iBeacon", detail: "Type in its UUID.", systemImage: "number")
                     }
 
-                    Link(destination: AppLinks.chooseBeacon) {
+                    NavigationLink { NoBeaconView() } label: {
                         DeviceRow(
-                            "Nothing yet",
-                            detail: "See which one to get.",
+                            "I don't have one yet",
+                            detail: "See which one we recommend.",
                             systemImage: "cart"
                         )
                     }
                 } header: {
-                    BrandHeader("What's by your bed?")
-                } footer: {
-                    Text("Not sure? The XIAO board is the most precise: you set exactly where the bedroom ends. A Blue Charm needs no computer to set up.")
+                    BrandHeader("Which beacon do you have?")
                 }
                 .brandRow()
 
@@ -705,7 +703,7 @@ private struct HubSetupView: View {
     }
 }
 
-/// A row in "What's by your bed?": the device's name, with a line on how to recognize it.
+/// A row in "Which beacon do you have?": the device's name, with a line on how to recognize it.
 private struct DeviceRow: View {
     let title: String
     let detail: String
@@ -806,6 +804,47 @@ private struct SpareDeviceSetupView: View {
             .brandRow()
         }
         .navigationTitle("Spare iPad or iPhone")
+        .brandForm()
+        .readableWidth()
+        .navigationBarTitleDisplayMode(.inline)
+    }
+}
+
+/// "I don't have one yet": which beacon to get. Buying happens on the website (it holds the
+/// Amazon links and disclosure), never in the app.
+private struct NoBeaconView: View {
+    var body: some View {
+        Form {
+            Section {
+                Text("A thumbnail-sized board that plugs into a USB charger by your bed. You set exactly where the bedroom ends by standing in the doorway, and walking out lifts the block within seconds. One board works for up to three phones.")
+                Link(destination: AppLinks.chooseHub) {
+                    Label("Get the parts (about $15)", systemImage: "cart")
+                }
+            } header: {
+                BrandHeader("We recommend: Seeed XIAO board")
+            } footer: {
+                Text("Needs a one-time install from a Mac or PC, about a minute.")
+            }
+            .brandRow()
+
+            Section {
+                Text("A USB stick that plugs into any USB charger. Goodnight Phone sets it up itself, but it's less precise: iOS decides when you've left, which can take a minute or more.")
+                Link(destination: AppLinks.chooseBlueCharm) {
+                    Label("Get a Blue Charm (about $19)", systemImage: "cart")
+                }
+            } header: {
+                BrandHeader("No computer? Blue Charm BC-U1")
+            }
+            .brandRow()
+
+            Section {
+                Text("It can be your beacon for free. Go back and pick Spare iPad or iPhone.")
+            } header: {
+                BrandHeader("Have a spare iPad or iPhone?")
+            }
+            .brandRow()
+        }
+        .navigationTitle("Get a beacon")
         .brandForm()
         .readableWidth()
         .navigationBarTitleDisplayMode(.inline)

@@ -6,6 +6,9 @@ enum AppLinks {
     /// beacons. It holds the tagged Amazon links, so the app itself never links to Amazon
     /// (Associates links in apps need separate approval).
     static let chooseBeacon = URL(string: "https://goodnightphone.marks-labs.com/beacon")!
+    /// The same page, scrolled to the bedroom hub's parts or to the Blue Charm.
+    static let chooseHub = URL(string: "https://goodnightphone.marks-labs.com/beacon#hub")!
+    static let chooseBlueCharm = URL(string: "https://goodnightphone.marks-labs.com/beacon#blue-charm")!
     /// One-click install of the bedroom hub firmware. Needs Chrome or Edge on a Mac or PC (Web
     /// Serial), so the app shares this link rather than opening it.
     static let hubInstall = URL(string: "https://goodnightphone.marks-labs.com/hub/install")!
