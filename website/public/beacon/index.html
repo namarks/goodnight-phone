@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Choose a beacon · Goodnight Phone</title>
-<meta name="description" content="Which Bluetooth beacon to put by your bed for Goodnight Phone.">
+<meta name="description" content="What to put by your bed for Goodnight Phone: a bedroom hub, or a Blue Charm beacon.">
 <link rel="icon" href="/assets/app-icon.png">
 <link rel="apple-touch-icon" href="/assets/app-icon.png">
 <link rel="stylesheet" href="/assets/site.css">
@@ -20,37 +20,48 @@
 <p class="lede">Goodnight Phone knows you’re in the bedroom when your iPhone hears a small Bluetooth beacon by your bed. Here’s what to get.</p>
 
 <div class="card">
-<h2 style="margin-top:0">Recommended: Blue Charm BC-U1</h2>
-<p>About $19. A USB stick that plugs into any USB-A charger, so there’s no battery to run out and quietly end blocking. Goodnight Phone sets it up itself, with no other app: it gives the beacon an ID of its own and lets you make its range shorter or longer from the app.</p>
+<h2>Recommended: a bedroom hub</h2>
+<p>About $15 in parts. A thumbnail-sized Bluetooth board that your iPhone stays connected to at night. You set exactly where the bedroom ends by standing in the doorway, and walking out lifts the block within seconds. One hub works for up to three phones, each with its own bedtime. It needs a one-time install from a Mac or PC (about a minute), then just a USB charger by the bed: no Wi-Fi, no account, no battery.</p>
+<ol>
+<li><strong>Seeed XIAO ESP32-C6</strong>, the version <em>without</em> pins (about $7). <a href="https://www.amazon.com/dp/B0D2NKVB34?tag=markslabs-20" rel="sponsored noopener">See it on Amazon</a></li>
+<li><strong>USB-C male-to-male adapter</strong>: the board and chargers both have USB-C sockets, and this joins them (about $7 for two; pick the straight “Male to Male” one). <a href="https://www.amazon.com/dp/B0BN3LKKPQ?tag=markslabs-20" rel="sponsored noopener">See it on Amazon</a></li>
+<li><strong>A charger or power strip with a USB-C port</strong> by the bed. A port on the side, like on the strip below, keeps the hub running along the wall instead of sticking out.</li>
+</ol>
+<p><a class="button" href="/hub/install">Install the hub</a></p>
+</div>
+
+<div class="card">
+<h2>No computer? Blue Charm BC-U1</h2>
+<p>About $19. A USB stick that plugs into any USB-A charger, with nothing to install: Goodnight Phone sets it up itself and lets you make its range shorter or longer from the app. It’s less precise than the hub: iOS decides when you’ve left, which can take a minute or more, and range only changes in steps, so the zone may spill past the door.</p>
 <p><a class="button" href="https://link.amazon/B05COYpdl" rel="sponsored noopener">See the BC-U1 on Amazon</a></p>
 </div>
 
 <div class="card">
-<h2 style="margin-top:0">No outlet by the bed: Blue Charm BC05</h2>
+<h2>No outlet by the bed: Blue Charm BC05</h2>
 <p>About $21. A small sealed puck on one CR2477 coin cell, rated about four years at the rate Goodnight Phone sets. The app sets it up the same way. When the battery dies, your phone counts as “not in the bedroom”, so blocking quietly stops until you replace it.</p>
 <p><a class="button" href="https://link.amazon/B0el1yazi" rel="sponsored noopener">See the BC05 on Amazon</a></p>
 </div>
 
 <h2>Need a USB port by the bed?</h2>
-<p>The BC-U1 needs a USB-A port. If the outlet by your bed is hidden behind a nightstand or headboard, a flat-plug power strip sits flush against the wall and adds USB ports where you can reach them.</p>
+<p>If the outlet by your bed is hidden behind a nightstand or headboard, a flat-plug power strip sits flush against the wall and adds USB ports where you can reach them.</p>
 <div class="card">
-<h3 style="margin-top:0">TROND flat-plug power strip</h3>
-<p>About $17. A flat, rotating plug that fits behind furniture, a 5 ft cord, 4 outlets and 4 USB ports (2 USB-A, 2 USB-C). Plug the BC-U1 into one of the USB-A ports and keep the strip on the far side of the bed from the door.</p>
+<h3>TROND flat-plug power strip</h3>
+<p>About $17. A flat, rotating plug that fits behind furniture, a 5 ft cord, 4 outlets and 4 USB ports (2 USB-A, 2 USB-C). Plug the hub into a USB-C port (or the BC-U1 into a USB-A port) and keep the strip on the far side of the bed from the door.</p>
 <p><a class="button" href="https://link.amazon/B0fwnrqm1" rel="sponsored noopener">See it on Amazon</a></p>
 </div>
 
 <h2>Already have a beacon?</h2>
 <p>Any iBeacon works. Enter its UUID in the app (it’s on the box or in the maker’s app), and adjust its range in the maker’s app. Lower transmit power, around −12 dBm or less, keeps the zone inside the bedroom.</p>
 
-<h2>No beacon yet?</h2>
-<p>A spare iPad or iPhone can stand in. Install Goodnight Phone on it, turn on <strong>Broadcast as bedroom beacon</strong>, and leave it open and plugged in by the bed. On your phone, open the bedroom beacon settings, tap <strong>Use a bedroom hub</strong>, then stand at the bedroom door and tap <strong>Set boundary here</strong>.</p>
+<h2>Have a spare iPad or iPhone?</h2>
+<p>It can be the hub for free. Install Goodnight Phone on it, turn on <strong>Broadcast as bedroom beacon</strong>, and leave it open and plugged in by the bed (the screen stays on). On your phone, open the bedroom beacon settings, tap <strong>Use a bedroom hub</strong>, then stand at the bedroom door and tap <strong>Set boundary here</strong>.</p>
 
 <p class="disclosure">As an Amazon Associate, Goodnight Phone earns from qualifying purchases. If you buy through the Amazon links on this page, we may earn a small commission at no extra cost to you.</p>
 </div>
 </main>
 <footer><div class="wrap">
 <p><a href="/beacon">Beacons</a><a href="/support">Help</a><a href="/privacy">Privacy</a><a href="mailto:support@marks-labs.com">support@marks-labs.com</a></p>
-<p>© 2026 Nicholas Marks. Apple, iPhone and Screen Time are trademarks of Apple Inc. Goodnight Phone isn’t affiliated with Apple or Blue Charm Beacons.</p>
+<p>© 2026 Nicholas Marks. Apple, iPhone and Screen Time are trademarks of Apple Inc. Goodnight Phone isn’t affiliated with Apple, Seeed Studio or Blue Charm Beacons.</p>
 </div></footer>
 </body>
 </html>

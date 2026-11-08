@@ -1,0 +1,11 @@
+{
+  "name": "Goodnight Phone bedroom hub",
+  "version": "1",
+  "new_install_prompt_erase": true,
+  "builds": [
+    {
+      "chipFamily": "ESP32-C6",
+      "parts": [{ "path": "bedroom-hub.factory.bin", "offset": 0 }]
+    }
+  ]
+}

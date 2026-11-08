@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Install the bedroom hub · Goodnight Phone</title>
+<meta name="description" content="Install the Goodnight Phone bedroom hub on a Seeed XIAO ESP32-C6 from your browser, in about a minute.">
+<link rel="icon" href="/assets/app-icon.png">
+<link rel="apple-touch-icon" href="/assets/app-icon.png">
+<link rel="stylesheet" href="/assets/site.css">
+<script type="module" src="/assets/esp-web-tools/install-button.js"></script>
+</head>
+<body>
+<header class="site"><div class="wrap">
+<a class="wordmark" href="/"><img src="/assets/app-icon.png" alt="" width="40" height="40">Goodnight Phone</a>
+<nav><a href="/beacon">Beacons</a><a href="/support">Help</a><a href="/privacy">Privacy</a></nav>
+</div></header>
+<main>
+<div class="narrow">
+<h1>Install the bedroom hub</h1>
+<p class="lede">A one-time step on a Mac or PC that takes about a minute. After this, the hub only needs a USB charger by your bed.</p>
+
+<div class="card">
+<p><strong>You need:</strong> a Seeed XIAO ESP32-C6 (see <a href="/beacon">Choose a beacon</a>), a USB-C cable that carries data (some only charge), and Chrome or Edge on a Mac or PC. An iPhone or iPad can’t do this step, and neither can Safari or Firefox.</p>
+</div>
+
+<h2>Steps</h2>
+<ol>
+<li>Plug the XIAO into your computer with the USB-C cable.</li>
+<li>Click <strong>Install</strong> below, pick the board in the list that pops up (it’s usually called “USB JTAG/serial debug unit”), then confirm.</li>
+<li>Wait until it says the installation is complete, about a minute. Then unplug it.</li>
+</ol>
+
+<p>
+<esp-web-install-button manifest="/hub/firmware/manifest.json">
+<button slot="activate" class="button" type="button">Install</button>
+<span slot="unsupported"><strong>This browser can’t install the hub.</strong> Open this page in Chrome or Edge on a Mac or PC.</span>
+<span slot="not-allowed"><strong>This page needs a secure connection.</strong> Open it at https://goodnightphone.marks-labs.com/hub/install.</span>
+</esp-web-install-button>
+</p>
+
+<h3>The board doesn’t show up in the list</h3>
+<p>Try another cable first: charge-only cables are common. If it still doesn’t appear, unplug the board, hold the small <strong>B</strong> (boot) button, plug it back in, let go, and click Install again.</p>
+
+<h2>Then, by the bed</h2>
+<ol>
+<li>Plug the hub into a USB charger or a power strip’s USB-C port near your bed, ideally on the far side from the door.</li>
+<li>In Goodnight Phone, open <strong>Bedroom beacon → Change beacon… → Use a bedroom hub</strong>. Your iPhone finds the hub on its own.</li>
+<li>Stand in the bedroom doorway and tap <strong>Set boundary here</strong>. Everyone in the house does this on their own phone; one hub works for up to three phones, each with its own bedtime.</li>
+</ol>
+<p class="small">The hub has no Wi-Fi and no account. It gets the time from your phone over Bluetooth, so after a power cut it picks up again as soon as your phone reconnects.</p>
+</div>
+</main>
+<footer><div class="wrap">
+<p><a href="/beacon">Beacons</a><a href="/support">Help</a><a href="/privacy">Privacy</a><a href="mailto:support@marks-labs.com">support@marks-labs.com</a></p>
+<p>© 2026 Nicholas Marks. Apple, iPhone and Screen Time are trademarks of Apple Inc. Goodnight Phone isn’t affiliated with Apple, Seeed Studio or Blue Charm Beacons.</p>
+</div></footer>
+</body>
+</html>

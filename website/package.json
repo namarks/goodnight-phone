@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
+    "predeploy": "test -f public/hub/firmware/bedroom-hub.factory.bin || scripts/update-hub-firmware.sh",
     "deploy": "wrangler deploy --config wrangler.jsonc"
   },
   "devDependencies": {
