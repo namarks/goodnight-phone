@@ -2,13 +2,13 @@ import SwiftUI
 
 enum AppLinks {
     static let privacyPolicy = URL(string: "https://goodnightphone.marks-labs.com/privacy")!
-    /// Blue Charm BC-U1, via the website's beacon page (which holds the tagged Amazon link, so the app
-    /// itself never links to Amazon; Associates links in apps need separate approval). USB powered (no battery to die and silently end blocking), with
-    /// transmit power down to -40 dBm so the signal can stop at the bedroom door.
-    static let recommendedBeacon = URL(string: "https://goodnightphone.marks-labs.com/beacon")!
-    /// Blue Charm BC05: the battery option, a small sealed puck on one CR2477 coin cell (about four
-    /// years at the one-second rate setup writes). Same KKM firmware, so the app sets it up too.
-    static let batteryBeacon = URL(string: "https://goodnightphone.marks-labs.com/beacon")!
+    /// The website's "Choose a beacon" page: the bedroom hub's parts first, then the Blue Charm
+    /// beacons. It holds the tagged Amazon links, so the app itself never links to Amazon
+    /// (Associates links in apps need separate approval).
+    static let chooseBeacon = URL(string: "https://goodnightphone.marks-labs.com/beacon")!
+    /// One-click install of the bedroom hub firmware. Needs Chrome or Edge on a Mac or PC (Web
+    /// Serial), so the app shares this link rather than opening it.
+    static let hubInstall = URL(string: "https://goodnightphone.marks-labs.com/hub/install")!
 }
 
 /// First-launch walkthrough: what Goodnight Phone does and what it will ask for.

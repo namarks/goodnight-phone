@@ -564,6 +564,12 @@ private struct BeaconEditor: View {
                 }
 
                 Section {
+                    NavigationLink {
+                        HubSetupView(isCurrent: current?.isStandIn == true) { pick(BeaconConfig.standIn) }
+                    } label: {
+                        Label("Use a bedroom hub", systemImage: "dot.radiowaves.left.and.right")
+                    }
+
                     Button {
                         Task {
                             guard let pairing = await blueCharm.setUp() else { return }
@@ -572,16 +578,12 @@ private struct BeaconEditor: View {
                         }
                     } label: {
                         HStack {
-                            Label("Set up a Blue Charm beacon", systemImage: "dot.radiowaves.left.and.right")
+                            Label("Set up a Blue Charm beacon", systemImage: "antenna.radiowaves.left.and.right")
                             Spacer()
                             if blueCharm.isBusy { ProgressView() }
                         }
                     }
                     .disabled(blueCharm.isBusy)
-
-                    Button { pick(BeaconConfig.standIn) } label: {
-                        Label("Use a bedroom hub", systemImage: "ipad.and.iphone")
-                    }
 
                     NavigationLink {
                         OtherBeaconForm(current: current?.isStandIn == false ? current : nil) { pick($0) }
@@ -600,22 +602,19 @@ private struct BeaconEditor: View {
                     case .connecting: Text("Connecting…")
                     case .writing: Text("Setting it up…")
                     case .failed(let message): Text(message).foregroundStyle(.red)
-                    case .idle, .holding: Text("Blue Charm: plug it into a USB charger by the bed. For the battery one, twist it open, hold the white button inside for 3 seconds until the light flashes red, and close it. Then hold your iPhone next to it and tap Set up.\n\nBedroom hub: a spare iPad or iPhone running Goodnight Phone (turn on Broadcast as bedroom beacon there), or a hub board. You set where the bedroom ends by standing in the doorway.")
+                    case .idle, .holding: Text("Blue Charm: plug it into a USB charger by the bed. For the battery one, twist it open, hold the white button inside for 3 seconds until the light flashes red, and close it. Then hold your iPhone next to it and tap Set up.")
                     }
                 }
                 .brandRow()
 
                 Section {
-                    Link(destination: AppLinks.recommendedBeacon) {
-                        Label("Get the recommended beacon (about $19)", systemImage: "cart")
-                    }
-                    Link(destination: AppLinks.batteryBeacon) {
-                        Label("Or the battery one (about $21)", systemImage: "cart")
+                    Link(destination: AppLinks.chooseBeacon) {
+                        Label("Choose a beacon", systemImage: "cart")
                     }
                 } header: {
                     BrandHeader("No beacon yet?")
                 } footer: {
-                    Text("The Blue Charm BC-U1 plugs into any USB charger, so there's no battery to run out, and Goodnight Phone sets it up for you. If there's no outlet by the bed, the Blue Charm BC05 is a small puck that runs for years on a coin cell, and Goodnight Phone sets it up the same way. If its battery dies, blocking stops until you replace it.")
+                    Text("The bedroom hub is the most precise: you set exactly where the bedroom ends, and leaving lifts the block within seconds. It's about $15 in parts and needs a one-time install from a computer. No computer? The Blue Charm BC-U1 plugs into any USB charger and Goodnight Phone sets it up for you, but iOS decides when you've left, which can take a minute or more.")
                 }
                 .brandRow()
 
@@ -639,9 +638,62 @@ private struct BeaconEditor: View {
     }
 
     private func detail(for beacon: BeaconConfig) -> String {
-        if beacon.isStandIn { return "Spare iPad or iPhone, or a hub board. Set the door boundary again after switching." }
+        if beacon.isStandIn { return "Bedroom hub. Set the door boundary again after switching." }
         if Shared.blueCharm?.uuid == beacon.uuid { return "Set up in Goodnight Phone" }
         return "iBeacon"
+    }
+}
+
+/// Setting up a bedroom hub: get the parts, install it from a computer, plug it in by the bed.
+/// The app never links to a store (the website holds the shopping links), and the install needs
+/// Chrome or Edge on a computer, so the app shares that link instead of opening it.
+private struct HubSetupView: View {
+    let isCurrent: Bool
+    let onUse: () -> Void
+
+    var body: some View {
+        Form {
+            Section {
+                Text("A thumbnail-sized Bluetooth board that stays plugged in by your bed. You set exactly where the bedroom ends by standing in the doorway, and walking out lifts the block within seconds. One hub works for up to three phones, each with its own bedtime.")
+            }
+            .brandRow()
+
+            Section {
+                Link(destination: AppLinks.chooseBeacon) {
+                    Label("See the parts", systemImage: "cart")
+                }
+            } header: {
+                BrandHeader("1. Get the parts")
+            } footer: {
+                Text("A Seeed XIAO ESP32-C6 and a small USB-C adapter, about $15 together, plus a USB-C charger or power strip by the bed.")
+            }
+            .brandRow()
+
+            Section {
+                ShareLink(item: AppLinks.hubInstall) {
+                    Label("Send the install link to your computer", systemImage: "laptopcomputer")
+                }
+            } header: {
+                BrandHeader("2. Install it from a computer")
+            } footer: {
+                Text("Open the link in Chrome or Edge on a Mac or PC, plug the board in with a USB-C cable and click Install. It takes about a minute, once. An iPhone or iPad can't do this step.")
+            }
+            .brandRow()
+
+            Section {
+                Button(isCurrent ? "This is your bedroom beacon" : "Use the bedroom hub", action: onUse)
+                    .disabled(isCurrent)
+            } header: {
+                BrandHeader("3. Plug it in by the bed")
+            } footer: {
+                Text("Put it on the far side of the bed from the door. Then tap the button above, stand in the bedroom doorway and tap Set boundary here. A spare iPad or iPhone running Goodnight Phone with Broadcast as bedroom beacon on works as a hub too.")
+            }
+            .brandRow()
+        }
+        .navigationTitle("Bedroom hub")
+        .brandForm()
+        .readableWidth()
+        .navigationBarTitleDisplayMode(.inline)
     }
 }
 
@@ -934,7 +986,7 @@ private struct StandInBeaconView: View {
                 ))
                 LabeledContent("Status", value: broadcaster.label)
             } footer: {
-                Text("Leave Goodnight Phone open with the device plugged in by the bed. iOS only keeps this running while the app is on screen, so the display stays on while this is on. On your iPhone, open the bedroom beacon settings, tap Use a bedroom hub, then set the bedroom boundary.")
+                Text("Leave Goodnight Phone open with the device plugged in by the bed. iOS only keeps this running while the app is on screen, so the display stays on while this is on. On your iPhone, open the bedroom beacon settings, tap Use a bedroom hub, then Use the bedroom hub, then set the bedroom boundary.")
             }
             .brandRow()
         }
