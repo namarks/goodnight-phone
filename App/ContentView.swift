@@ -723,14 +723,20 @@ private struct BlueCharmRange: View {
     let pairing: BlueCharmPairing
 
     private var steps: [Int] { BlueCharm.powerSteps }
-    private var index: Int { steps.firstIndex(of: pairing.txPower) ?? steps.firstIndex(of: BlueCharm.startingPower)! }
+    /// The step last tapped, even before the beacon has it, so each tap shows at once.
+    private var power: Int { blueCharm.targetPower ?? pairing.txPower }
+    private var index: Int { steps.firstIndex(of: power) ?? steps.firstIndex(of: BlueCharm.startingPower)! }
+    /// Busy with something other than a range change (setup), when the buttons wait.
+    private var otherJob: Bool { blueCharm.isBusy && blueCharm.targetPower == nil }
 
     var body: some View {
         LabeledContent("Range") {
-            if blueCharm.isBusy {
-                ProgressView()
-            } else {
+            HStack(spacing: 8) {
+                if blueCharm.targetPower != nil, blueCharm.phase != .holding {
+                    ProgressView()
+                }
                 Text("\(index + 1) of \(steps.count)")
+                    .monospacedDigit()
             }
         }
         HStack {
@@ -742,19 +748,14 @@ private struct BlueCharmRange: View {
         }
         // Borderless, or a tap anywhere in the row would press both buttons.
         .buttonStyle(.borderless)
-        .disabled((model.isLocked && !pairing.inTuningWindow()) || blueCharm.isBusy)
+        .disabled((model.isLocked && !pairing.inTuningWindow()) || otherJob)
         if case .failed(let message) = blueCharm.phase {
             Text(message).font(.caption).foregroundStyle(.red)
         }
     }
 
     private func step(_ delta: Int) {
-        let power = steps[index + delta]
-        Task {
-            if let updated = await blueCharm.setPower(power, for: pairing) {
-                model.saveBlueCharm(updated)
-            }
-        }
+        blueCharm.requestPower(steps[index + delta], for: pairing) { model.saveBlueCharm($0) }
     }
 }
 
