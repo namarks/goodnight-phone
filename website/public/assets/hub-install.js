@@ -36,7 +36,10 @@ async function install() {
     return;
   }
   try {
-    if (!port.readable) await port.open({ baudRate: 115200, bufferSize: 8192 });
+    // Only one attempt runs at a time (see `busy` below), so an open port is one a previous
+    // attempt left open while the dialog was resetting the board.
+    if (port.readable) await port.close().catch(() => {});
+    await port.open({ baudRate: 115200, bufferSize: 8192 });
   } catch (error) {
     show("busy");
     return;
@@ -46,21 +49,27 @@ async function install() {
   const dialog = document.createElement("ewt-install-dialog");
   dialog.port = port;
   dialog.manifestPath = MANIFEST;
-  let finished = false;
-  let failed = false;
-  dialog.addEventListener(
-    "closed",
-    () => {
-      port.close().catch(() => {});
-      show(finished ? "done" : failed ? "failed" : "ready");
-    },
-    { once: true },
-  );
+  let outcome = "ready";
+  const closed = new Promise((resolve) => {
+    dialog.addEventListener(
+      "closed",
+      () => {
+        port.close().catch(() => {});
+        show(outcome);
+        resolve();
+      },
+      { once: true },
+    );
+  });
   document.body.appendChild(dialog);
 
   // The manifest sets new_install_improv_wait_time to 0, so the dialog only loads the manifest.
   await waitFor(() => dialog._state === "ERROR" || (dialog._manifest && dialog._client === null), 10000);
-  if (dialog._state === "ERROR" || !dialog._manifest) return; // the dialog shows what went wrong
+  if (dialog._state === "ERROR" || !dialog._manifest) {
+    // The dialog shows what went wrong and closes when the user is done with it.
+    await closed;
+    return;
+  }
 
   // Erase first, so every hub starts from the same clean state.
   dialog._startInstall(true);
@@ -69,30 +78,45 @@ async function install() {
   await dialog.updateComplete;
   dialog._confirmInstall();
 
-  await waitFor(() => {
-    const state = dialog._installState && dialog._installState.state;
-    return state === "finished" || state === "error";
-  }, 10 * 60 * 1000);
-  if (dialog._installState && dialog._installState.state === "finished") {
-    finished = true;
+  const installState = () => dialog._installState && dialog._installState.state;
+  // Ends early if the user closes the dialog.
+  let isClosed = false;
+  closed.then(() => (isClosed = true));
+  while (!isClosed && installState() !== "finished" && installState() !== "error") await sleep(100);
+  if (installState() === "finished") {
+    outcome = "done";
     // Let the dialog reopen the port after its reset, then close it and show our next steps.
-    await waitFor(() => dialog._client !== undefined, 5000);
-    dialog._closeDialog();
-  } else {
+    await waitFor(() => isClosed || dialog._client !== undefined, 5000);
+    if (!isClosed) dialog._closeDialog();
+  } else if (installState() === "error") {
     // Its error screen leads back to the menu, so close it and show our own tips instead.
-    failed = true;
+    outcome = "failed";
     await sleep(300);
-    dialog._closeDialog();
+    if (!isClosed) dialog._closeDialog();
   }
+  await closed;
 }
 
 if (!("serial" in navigator)) show("unsupported");
 else if (!window.isSecureContext) show("not-allowed");
 else {
   show("ready");
-  for (const el of root.querySelectorAll("button")) {
-    el.addEventListener("click", () => {
-      install().catch((error) => alert(error.message));
+  // One attempt at a time: a second one on the same board would fight the first over its port.
+  let busy = false;
+  const buttons = root.querySelectorAll("button");
+  for (const el of buttons) {
+    el.addEventListener("click", async () => {
+      if (busy) return;
+      busy = true;
+      for (const b of buttons) b.disabled = true;
+      try {
+        await install();
+      } catch (error) {
+        alert(error.message);
+      } finally {
+        busy = false;
+        for (const b of buttons) b.disabled = false;
+      }
     });
   }
 }
