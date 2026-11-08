@@ -1,7 +1,7 @@
 import SwiftUI
 
 enum AppLinks {
-    static let privacyPolicy = URL(string: "https://github.com/namarks/goodnight-phone/blob/main/PRIVACY.md")!
+    static let privacyPolicy = URL(string: "https://goodnightphone.marks-labs.com/privacy")!
     /// Blue Charm BC-U1: USB powered (no battery to die and silently end blocking), with
     /// transmit power down to -40 dBm so the signal can stop at the bedroom door.
     static let recommendedBeacon = URL(string: "https://www.amazon.com/dp/B09FYNK94F")!
