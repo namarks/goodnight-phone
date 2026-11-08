@@ -1,6 +1,8 @@
 # Goodnight Phone Privacy Policy
 
-_Last updated: October 28, 2026_
+_Last updated: November 8, 2026_
+
+The live copy of this policy is at https://goodnightphone.marks-labs.com/privacy (source: `website/public/privacy/index.html`); keep both in step.
 
 Goodnight Phone blocks the apps you choose while your iPhone is in your bedroom during the hours you set. It's built so that nothing about you leaves your phone.
 
@@ -38,4 +40,4 @@ If this policy changes, the new version will be posted here with a new date.
 
 ## Contact
 
-Questions? Open an issue at https://github.com/namarks/goodnight-phone/issues.
+Questions? Email support@marks-labs.com.

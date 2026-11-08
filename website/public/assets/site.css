@@ -1,0 +1,55 @@
+/* Goodnight Phone picture-book palette. Same values as App/Assets.xcassets colorsets. */
+@font-face{font-family:"Fraunces Soft";src:url("/assets/FrauncesSoft-SemiBold.ttf") format("truetype");font-weight:600;font-display:swap}
+:root{
+  color-scheme:light dark;
+  --paper:#F7EFDD;--card:#FFF9EC;--ink:#23302A;--muted:#5B665F;--line:#E3D7BD;
+  --green:#2F6B45;--blanket:#C23B2E;--moon:#F2C849;--night:#1D2B45;--on-green:#FFF9EC;
+}
+@media (prefers-color-scheme:dark){
+  :root{--paper:#141D30;--card:#1D2B45;--ink:#F7EFDD;--muted:#B9B3A4;--line:#2D3D5C;--green:#7FC28F;--blanket:#E0675A;--on-green:#141D30}
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--paper);color:var(--ink);font:1.0625rem/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+a{color:var(--green);text-underline-offset:.2em}
+a:focus-visible{outline:3px solid var(--moon);outline-offset:4px;border-radius:4px}
+img{display:block;max-width:100%;height:auto}
+h1,h2,h3,.wordmark{font-family:"Fraunces Soft",Georgia,serif;font-weight:600;line-height:1.1;margin:0 0 .6rem}
+h1{font-size:clamp(2.2rem,6vw,3.4rem)}
+h2{font-size:clamp(1.6rem,4vw,2.1rem);margin-top:2.5rem}
+h3{font-size:1.25rem;margin-top:1.6rem}
+p,ul,ol{margin:0 0 1rem}
+li{margin-bottom:.4rem}
+.wrap{width:min(960px,calc(100% - 32px));margin-inline:auto}
+.narrow{width:min(720px,calc(100% - 32px));margin-inline:auto}
+header.site{padding:20px 0}
+header.site .wrap{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap}
+.wordmark{display:flex;align-items:center;gap:10px;font-size:1.3rem;margin:0;color:var(--ink);text-decoration:none}
+.wordmark img{width:40px;height:40px;border-radius:10px}
+nav a{color:var(--ink);text-decoration:none;margin-left:18px;font-weight:600}
+nav a:first-child{margin-left:0}
+nav a:hover{color:var(--green)}
+.hero{display:grid;grid-template-columns:1.1fr .9fr;gap:40px;align-items:center;padding:24px 0 48px}
+.hero img{border-radius:24px;box-shadow:0 12px 32px rgba(29,43,69,.18)}
+.lede{font-size:1.2rem;color:var(--muted)}
+.button{display:inline-block;background:var(--green);color:var(--on-green);padding:.8rem 1.4rem;border-radius:999px;font-weight:700;text-decoration:none}
+.button:hover{filter:brightness(1.08)}
+.small{font-size:.9rem;color:var(--muted)}
+.steps{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;padding:0;list-style:none;counter-reset:s}
+.steps li{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:20px;counter-increment:s}
+.steps li::before{content:counter(s);display:inline-grid;place-items:center;width:32px;height:32px;border-radius:50%;background:var(--moon);color:#23302A;font-weight:800;margin-bottom:10px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:24px;margin:20px 0}
+.split{display:grid;grid-template-columns:.8fr 1.2fr;gap:32px;align-items:center;margin-block:32px}
+.split img{border-radius:20px}
+.disclosure{font-size:.9rem;color:var(--muted);border-left:4px solid var(--moon);padding-left:12px}
+main{padding-bottom:48px}
+footer{border-top:1px solid var(--line);padding:24px 0 40px;color:var(--muted);font-size:.9rem}
+footer a{color:var(--muted)}
+footer p:first-child{display:flex;flex-wrap:wrap;gap:8px 16px}
+@media (max-width:720px){
+  .hero,.split{grid-template-columns:1fr}
+  .steps{grid-template-columns:1fr}
+  nav a{margin-left:12px}
+}
+.split.rev{grid-template-columns:1.2fr .8fr}
+@media (max-width:720px){.split.rev{grid-template-columns:1fr}.split.rev img{order:-1}}
