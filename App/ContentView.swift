@@ -600,7 +600,7 @@ private struct BeaconEditor: View {
                     case .connecting: Text("Connecting…")
                     case .writing: Text("Setting it up…")
                     case .failed(let message): Text(message).foregroundStyle(.red)
-                    case .idle: Text("Blue Charm: plug it into a USB charger by the bed. For the battery one, twist it open, hold the white button inside for 3 seconds until the light flashes red, and close it. Then hold your iPhone next to it and tap Set up.\n\nBedroom hub: a spare iPad or iPhone running Goodnight Phone (turn on Broadcast as bedroom beacon there), or a hub board. You set where the bedroom ends by standing in the doorway.")
+                    case .idle, .holding: Text("Blue Charm: plug it into a USB charger by the bed. For the battery one, twist it open, hold the white button inside for 3 seconds until the light flashes red, and close it. Then hold your iPhone next to it and tap Set up.\n\nBedroom hub: a spare iPad or iPhone running Goodnight Phone (turn on Broadcast as bedroom beacon there), or a hub board. You set where the bedroom ends by standing in the doorway.")
                     }
                 }
                 .brandRow()
