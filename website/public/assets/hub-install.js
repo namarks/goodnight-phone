@@ -64,6 +64,9 @@ async function install() {
 
   // Erase first, so every hub starts from the same clean state.
   dialog._startInstall(true);
+  // Switching to INSTALL resets _installConfirmed when the dialog re-renders (willUpdate), so let
+  // that update finish first; otherwise it flashes behind a confirm screen asking to install again.
+  await dialog.updateComplete;
   dialog._confirmInstall();
 
   await waitFor(() => {
