@@ -8,7 +8,7 @@ enum AppLinks {
     static let recommendedBeacon = URL(string: "https://goodnightphone.marks-labs.com/beacon")!
     /// Blue Charm BC05: the battery option, a small sealed puck on one CR2477 coin cell (about four
     /// years at the one-second rate setup writes). Same KKM firmware, so the app sets it up too.
-    static let batteryBeacon = URL(string: "https://bluecharmbeacons.com/product/bluetooth-ble-ibeacon-bc05-multibeacons-water-resistant-with-motion-sensor/")!
+    static let batteryBeacon = URL(string: "https://goodnightphone.marks-labs.com/beacon")!
 }
 
 /// First-launch walkthrough: what Goodnight Phone does and what it will ask for.
