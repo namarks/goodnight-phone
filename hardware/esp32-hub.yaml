@@ -17,10 +17,10 @@
 # Heartbeat characteristic: notify, value 0x01 every 2 s during the phone's bedtime hours, one 0x00
 # when they end. Schedule characteristic: the phone writes its PhoneHours JSON
 # ({"schedule": BedtimeSchedule, "timeZone": "...", "now": seconds since 1970, "utcOffset": seconds,
-# "nextOffsetChange": seconds since 1970, "offsetAfterChange": seconds}). This board keeps one
-# schedule and clock (the last written) for every connected phone (up to 3). Until a phone has
-# written once since power-up it has no clock, and beats around the clock like the iPad does
-# before it has hours.
+# "nextOffsetChange": seconds since 1970, "offsetAfterChange": seconds}). This board keeps each
+# connected phone's hours separately (up to 3 phones) and beats while any of them is inside its
+# hours. Until a phone has written since power-up it has no clock, and beats around the clock like
+# the iPad does before it has hours.
 
 esphome:
   name: bedroom-hub
@@ -55,6 +55,9 @@ esp32_ble_server:
   manufacturer: "Goodnight Phone"
   # One per phone in the household.
   max_clients: 3
+  on_disconnect:
+    - lambda: |-
+        for (int i = 0; i < 3; i++) if (id(slot_conn)[i] == id) id(slot_conn)[i] = -1;
   services:
     - uuid: E6B2E125-B543-4BA4-8D19-B68DBA9F147C
       advertise: true
@@ -70,21 +73,34 @@ esp32_ble_server:
           on_write:
             then:
               - lambda: |-
+                  // `id` here is the writing phone's connection. Each phone gets its own slot,
+                  // so two phones with different bedtimes each keep their own hours.
+                  uint16_t conn = id;
+                  auto &slots = id(slot_conn);
+                  int slot = -1;
+                  for (int i = 0; i < 3; i++) if (slots[i] == conn) slot = i;
+                  for (int i = 0; slot < 0 && i < 3; i++) if (slots[i] < 0) slot = i;
+                  if (slot < 0) {
+                    ESP_LOGW("hub", "No free slot for connection %u", conn);
+                    return;
+                  }
                   std::string text(x.begin(), x.end());
-                  bool ok = json::parse_json(text, [](JsonObject root) -> bool {
-                    // The phone's clock (see the protocol note at the top).
+                  bool ok = json::parse_json(text, [&](JsonObject root) -> bool {
+                    JsonObject s = root["schedule"];
+                    if (s.isNull()) return false;
+                    // The phone's clock (see the protocol note at the top). The time itself is
+                    // the same for every phone; the offsets are each phone's own.
                     if (!root["now"].isNull() && !root["utcOffset"].isNull()) {
                       id(clock_epoch) = (int64_t) root["now"].as<double>();
                       id(clock_millis) = millis();
-                      id(utc_offset) = root["utcOffset"].as<int>();
-                      id(offset_change_at) = root["nextOffsetChange"].isNull()
-                          ? 0 : (int64_t) root["nextOffsetChange"].as<double>();
-                      id(offset_after) = root["offsetAfterChange"] | id(utc_offset);
                       id(have_clock) = true;
+                      int offset = root["utcOffset"].as<int>();
+                      id(slot_offset)[slot] = offset;
+                      id(slot_change_at)[slot] = root["nextOffsetChange"].isNull()
+                          ? 0 : (int64_t) root["nextOffsetChange"].as<double>();
+                      id(slot_offset_after)[slot] = root["offsetAfterChange"] | offset;
                     }
-                    JsonObject s = root["schedule"];
-                    if (s.isNull()) return false;
-                    id(limit_to_hours) = s["limitToHours"] | true;
+                    id(slot_limit)[slot] = s["limitToHours"] | true;
                     int usual_start = s["startMinutes"] | 1260;
                     int usual_end = s["endMinutes"] | 420;
                     JsonArray nights = s["nights"];
@@ -99,61 +115,67 @@ esp32_ble_server:
                           end = night["hours"]["end"] | usual_end;
                         }
                       }
-                      id(night_hours)[d * 2] = start;
-                      id(night_hours)[d * 2 + 1] = end;
+                      id(slot_hours)[slot * 14 + d * 2] = start;
+                      id(slot_hours)[slot * 14 + d * 2 + 1] = end;
                     }
                     return true;
                   });
-                  id(have_schedule) = ok;
-                  ESP_LOGI("hub", "Schedule %s (%d bytes)", ok ? "received" : "unreadable", (int) x.size());
+                  if (ok) slots[slot] = conn;
+                  ESP_LOGI("hub", "Schedule %s (%d bytes, phone %d)", ok ? "received" : "unreadable",
+                           (int) x.size(), slot + 1);
 
 globals:
   - id: have_clock
     type: bool
     initial_value: "false"
-  - id: clock_epoch       # seconds since 1970 when the phone last wrote
+  - id: clock_epoch       # seconds since 1970 when a phone last wrote
     type: int64_t
   - id: clock_millis      # millis() at that moment
     type: uint32_t
-  - id: utc_offset        # the phone's offset from UTC then, in seconds
-    type: int
-  - id: offset_change_at  # next daylight-saving change, seconds since 1970 (0 = none)
-    type: int64_t
-  - id: offset_after      # the offset after that change
-    type: int
-  - id: have_schedule
-    type: bool
-    initial_value: "false"
-  - id: limit_to_hours
-    type: bool
-    initial_value: "true"
-  - id: night_hours
-    type: std::array<int, 14>
+  # One slot per connected phone (up to 3). slot_conn is its connection, -1 when free.
+  - id: slot_conn
+    type: std::array<int, 3>
+    initial_value: "{-1, -1, -1}"
+  - id: slot_limit        # false: the phone blocks around the clock, so always beat
+    type: std::array<bool, 3>
+  - id: slot_hours        # per slot, per weekday (Sunday first): start, end minutes or -1
+    type: std::array<int, 42>
+  - id: slot_offset       # the phone's offset from UTC, in seconds
+    type: std::array<int, 3>
+  - id: slot_change_at    # its next daylight-saving change, seconds since 1970 (0 = none)
+    type: std::array<int64_t, 3>
+  - id: slot_offset_after # its offset after that change
+    type: std::array<int, 3>
   - id: was_awake
     type: bool
     initial_value: "false"
 
 script:
-  # Port of BedtimeSchedule.contains: a night belongs to the day it starts on.
+  # Beats while ANY connected phone is inside its bedtime hours. Each phone's app only blocks
+  # inside its own hours, so extra beats during someone else's hours just keep its reading fresh.
   - id: send_heartbeat
     then:
       - lambda: |-
-          bool awake = true;   // like the iPad: no schedule yet (or no clock yet) means beat
-          if (id(have_schedule) && id(limit_to_hours) && id(have_clock)) {
-            // Unsigned subtraction survives millis() wrapping (every ~49 days).
-            int64_t now = id(clock_epoch) + (uint32_t) (millis() - id(clock_millis)) / 1000;
-            bool changed = id(offset_change_at) > 0 && now >= id(offset_change_at);
-            int64_t local = now + (changed ? id(offset_after) : id(utc_offset));
+          // Port of BedtimeSchedule.contains: a night belongs to the day it starts on.
+          auto length = [](int start, int end) {
+            int len = ((end - start) % 1440 + 1440) % 1440;
+            return len == 0 ? 1440 : len;
+          };
+          // Unsigned subtraction survives millis() wrapping (every ~49 days).
+          int64_t now = id(clock_epoch) + (uint32_t) (millis() - id(clock_millis)) / 1000;
+          bool any_phone = false;
+          bool awake = false;
+          for (int slot = 0; slot < 3 && !awake; slot++) {
+            if (id(slot_conn)[slot] < 0) continue;
+            any_phone = true;
+            if (!id(slot_limit)[slot]) { awake = true; break; }
+            bool changed = id(slot_change_at)[slot] > 0 && now >= id(slot_change_at)[slot];
+            int64_t local = now + (changed ? id(slot_offset_after)[slot] : id(slot_offset)[slot]);
             int64_t days = local / 86400;
             int minutes = (int) (local % 86400) / 60;
             int today = (int) ((days + 4) % 7);   // 1 Jan 1970 was a Thursday; 0 = Sunday
-            auto length = [](int start, int end) {
-              int len = ((end - start) % 1440 + 1440) % 1440;
-              return len == 0 ? 1440 : len;
-            };
-            auto &h = id(night_hours);
             int yesterday = (today + 6) % 7;
-            awake = false;
+            const int *h = &id(slot_hours)[slot * 14];
             if (h[yesterday * 2] >= 0) {
               int since = minutes + 1440 - h[yesterday * 2];
               if (since < length(h[yesterday * 2], h[yesterday * 2 + 1])) awake = true;
@@ -163,6 +185,8 @@ script:
               awake = minutes >= start && minutes - start < length(start, h[today * 2 + 1]);
             }
           }
+          // Like the iPad: no phone has sent its hours (or the clock) yet, so beat.
+          if (!any_phone || !id(have_clock)) awake = true;
           if (awake) {
             id(heartbeat).set_value(std::vector<uint8_t>{1});
             id(heartbeat).notify();
