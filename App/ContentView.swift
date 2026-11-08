@@ -258,6 +258,10 @@ struct ContentView: View {
             }
             Button(model.beacon == nil ? "Add beacon…" : "Change beacon…") { editingBeacon = true }
                 .disabled(model.isLocked)
+            // Read-only, so it stays open while apps are blocked.
+            NavigationLink { BeaconPlacementGuide() } label: {
+                Label("Where to put the beacon", systemImage: "lightbulb")
+            }
         } header: {
             BrandHeader("Bedroom beacon")
         } footer: {
@@ -583,6 +587,10 @@ private struct BeaconEditor: View {
                         OtherBeaconForm(current: current?.isStandIn == false ? current : nil) { pick($0) }
                     } label: {
                         Label("Another iBeacon", systemImage: "number")
+                    }
+
+                    NavigationLink { BeaconPlacementGuide() } label: {
+                        Label("Where to put it", systemImage: "lightbulb")
                     }
                 } header: {
                     BrandHeader("Add a beacon")
