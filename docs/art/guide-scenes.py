@@ -147,8 +147,11 @@ def scene_hardware():
            f'<path d="M218,112 l12,8 l-13,7" fill="none" stroke="{INK}" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>'
            + plate(290, 132, 82, 150).replace(f'fill="{CREAM}" stroke="{INK}" stroke-width="{SW}"', f'fill="#EFE6D3" stroke="{INK}" stroke-width="{SW}"', 1)
            + charger(290, 94, 1.15))
+    either = (f'<line x1="52" y1="236" x2="160" y2="236" stroke="#D6CDBA" stroke-width="3" stroke-linecap="round"/>'
+              f'<line x1="230" y1="236" x2="338" y2="236" stroke="#D6CDBA" stroke-width="3" stroke-linecap="round"/>'
+              f'<text x="195" y="245" text-anchor="middle" {FONT} font-size="26" fill="{INK}" fill-opacity="0.7">or</text>')
     bottom = puck(140, 336, 58) + coin(270, 360, 29)
-    return frame(card + top + bottom, floor=False)
+    return frame(card + top + either + bottom, floor=False)
 
 
 def scene_nightstand():

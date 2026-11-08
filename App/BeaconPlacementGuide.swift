@@ -14,43 +14,43 @@ struct BeaconPlacementGuide: View {
     private let tips = [
         Tip(
             art: "GuideHardware",
-            title: "What you're placing",
-            text: "The USB beacon is a tiny black plug, smaller than a quarter. It goes into a USB wall charger. The battery beacon is a white puck about 2 inches wide."
+            title: "Pick a beacon",
+            text: "USB beacon: a tiny plug that goes into any USB wall charger, so it never needs a battery.\nBattery beacon: a small puck you can stick anywhere. The battery lasts for years."
         ),
         Tip(
             art: "GuideNightstand",
-            title: "Not on the nightstand",
-            text: "If you can reach it from bed, it's too easy to unplug."
+            title: "Keep it out of reach",
+            text: "Not on the nightstand or by your pillow. If you can reach it from bed, you'll unplug it."
         ),
         Tip(
             art: "GuideUnderBed",
-            title: "Down behind the bed",
-            text: "Plug the charger into an outlet behind or under the bed. To unplug it, you'd have to crawl under."
+            title: "USB: plug it in under the bed",
+            text: "Use an outlet behind or under the bed, so unplugging it means crawling under."
         ),
         Tip(
-            title: "Make it even harder",
-            text: "Put a childproof outlet cover over the charger, or tape it in. Bluetooth works right through."
+            title: "Want it even harder to reach?",
+            text: "Put a childproof cover over the outlet. The signal goes right through it."
         ),
         Tip(
             art: "GuidePuck",
-            title: "Battery beacon? Tape it under the bed",
-            text: "Tape the puck to the bed frame. There's no cord to pull, and the battery lasts for years."
+            title: "Battery: tape it under the bed",
+            text: "Tape the puck to the underside of the bed frame. There's no cord to pull."
         ),
         Tip(
             art: "GuideFloorPlan",
-            title: "Far from the door",
-            text: "Keep it on the far side of the room from the door. Then walk into the hallway with Goodnight Phone open. If it still says “In the bedroom” after 30 seconds, tap Shorter."
+            title: "Keep it away from the door",
+            text: "Put it on the far side of the room, so the signal stops at the doorway. Then step into the hallway. If Goodnight Phone still says “In the bedroom” after 30 seconds, tap Shorter."
         ),
         Tip(
-            title: "Using a spare iPad or iPhone?",
-            text: "Keep it on a dresser, plugged in, with Broadcast on. Set the boundary standing in the bedroom doorway."
+            title: "Using a spare iPad or iPhone instead?",
+            text: "Leave it plugged in on a dresser with Broadcast on. Then set the boundary standing in the bedroom doorway."
         ),
     ]
 
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 32) {
-                Text("Put the beacon somewhere that's a hassle to reach, so switching it off at midnight takes real effort.")
+                Text("Hide the beacon somewhere hard to reach, so you can't just unplug it at bedtime.")
                     .font(.system(.body, design: .rounded))
                     .foregroundStyle(Brand.ink.opacity(0.85))
 
