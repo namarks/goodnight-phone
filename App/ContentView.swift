@@ -14,6 +14,7 @@ struct ContentView: View {
     @State private var showingPicker = false
     @State private var pickerSelection = FamilyActivitySelection()
     @State private var editingBeacon = false
+    @State private var path: [Screen] = []
 
     /// Keeps the status card current if bedtime starts while the app is open.
     private let ticker = Timer.publish(every: 30, on: .main, in: .common).autoconnect()
@@ -21,79 +22,119 @@ struct ContentView: View {
     /// The spare-device stand-in is watched over Bluetooth, so it needs a boundary instead of location.
     private var usesStandIn: Bool { model.beacon?.isStandIn == true }
 
-    private var setupDone: Bool {
-        guard model.screenTimeApproved, !model.selection.isEmptySelection, model.beacon != nil else { return false }
-        return usesStandIn ? hub.boundary != nil && hub.link != .notAllowed : location.isReady
+    private var setupDone: Bool { setupStepsLeft == 0 }
+
+    /// Unfinished rows of the setup checklist.
+    private var setupStepsLeft: Int {
+        var left = 0
+        if !model.screenTimeApproved { left += 1 }
+        if model.selection.isEmptySelection { left += 1 }
+        if model.beacon == nil { left += 1 }
+        if usesStandIn {
+            if hub.boundary == nil || hub.link == .notAllowed { left += 1 }
+        } else if !location.isReady {
+            left += 1
+        }
+        return left
     }
 
     var body: some View {
-        NavigationStack {
-            Form {
-                Section {
-                    StatusCard(
-                        setupDone: setupDone,
-                        isBlocking: model.isBlocking,
-                        inRoom: model.inRoom,
-                        anyTime: !model.schedule.limitToHours,
-                        tonight: model.schedule.currentNight(),
-                        testEndsAt: model.testEndsAt
-                    )
+        NavigationStack(path: $path) {
+            mainScreen
+                .navigationDestination(for: Screen.self) { screen in
+                    switch screen {
+                    case .setup: setupScreen
+                    }
                 }
-                .listRowInsets(EdgeInsets())
-                .listRowBackground(Color.clear)
+        }
+        .familyActivityPicker(isPresented: $showingPicker, selection: $pickerSelection)
+        .onChange(of: showingPicker) { _, isShowing in
+            if !isShowing { model.saveSelection(pickerSelection) }
+        }
+        .sheet(isPresented: $editingBeacon) {
+            BeaconEditor(
+                current: model.beacon,
+                onSave: { model.saveBeacon($0) },
+                onSetUpBlueCharm: { model.saveBlueCharm($0) }
+            )
+        }
+        .task {
+            signal.watch(model.beacon)
+            blueCharm.watchSignal(of: model.blueCharm)
+            hub.setForeground(true)
+            broadcaster.restore()
+            await model.refreshEverything()
+        }
+        .onChange(of: model.beacon) { _, beacon in signal.watch(beacon) }
+        .onChange(of: model.blueCharm?.peripheralID) { _, _ in
+            if scenePhase != .background { blueCharm.watchSignal(of: model.blueCharm) }
+        }
+        .onChange(of: scenePhase) { _, phase in
+            if phase == .background {
+                signal.stop()
+                blueCharm.watchSignal(of: nil)
+                hub.setForeground(false)
+                broadcaster.suspend()
+            }
+            guard phase == .active else { return }
+            location.refresh()
+            signal.watch(model.beacon)
+            blueCharm.watchSignal(of: model.blueCharm)
+            hub.setForeground(true)
+            broadcaster.resume()
+            Task { await model.refreshEverything() }
+        }
+        .onReceive(ticker) { _ in model.reload() }
+    }
 
-                if broadcaster.isOn { broadcastingSection }
-                if !setupDone { setupSection }
-                appsSection
-                if model.screenTimeApproved && !model.selection.isEmptySelection { tryItSection }
-                hoursSection
-                beaconSection
-                standInSection
-                activitySection
-                aboutSection
-            }
-            .navigationTitle("Goodnight Phone")
-            .brandForm()
-            .readableWidth()
-            .familyActivityPicker(isPresented: $showingPicker, selection: $pickerSelection)
-            .onChange(of: showingPicker) { _, isShowing in
-                if !isShowing { model.saveSelection(pickerSelection) }
-            }
-            .sheet(isPresented: $editingBeacon) {
-                BeaconEditor(
-                    current: model.beacon,
-                    onSave: { model.saveBeacon($0) },
-                    onSetUpBlueCharm: { model.saveBlueCharm($0) }
+    // MARK: - Screens
+
+    /// The one main screen: what gets blocked and when.
+    private var mainScreen: some View {
+        Form {
+            Section {
+                StatusCard(
+                    setupDone: setupDone,
+                    isBlocking: model.isBlocking,
+                    inRoom: model.inRoom,
+                    anyTime: !model.schedule.limitToHours,
+                    tonight: model.schedule.currentNight(),
+                    testEndsAt: model.testEndsAt
                 )
             }
-            .task {
-                signal.watch(model.beacon)
-                blueCharm.watchSignal(of: model.blueCharm)
-                hub.setForeground(true)
-                broadcaster.restore()
-                await model.refreshEverything()
-            }
-            .onChange(of: model.beacon) { _, beacon in signal.watch(beacon) }
-            .onChange(of: model.blueCharm?.peripheralID) { _, _ in
-                if scenePhase != .background { blueCharm.watchSignal(of: model.blueCharm) }
-            }
-            .onChange(of: scenePhase) { _, phase in
-                if phase == .background {
-                    signal.stop()
-                    blueCharm.watchSignal(of: nil)
-                    hub.setForeground(false)
-                    broadcaster.suspend()
-                }
-                guard phase == .active else { return }
-                location.refresh()
-                signal.watch(model.beacon)
-                blueCharm.watchSignal(of: model.blueCharm)
-                hub.setForeground(true)
-                broadcaster.resume()
-                Task { await model.refreshEverything() }
-            }
-            .onReceive(ticker) { _ in model.reload() }
+            .listRowInsets(EdgeInsets())
+            .listRowBackground(Color.clear)
+
+            if broadcaster.isOn { broadcastingSection }
+            if !setupDone { finishSetupSection }
+            appsSection
+            hoursSection
+            if model.screenTimeApproved && !model.selection.isEmptySelection { tryItSection }
         }
+        .navigationTitle("Goodnight Phone")
+        .brandForm()
+        .readableWidth()
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                NavigationLink(value: Screen.setup) {
+                    Image(systemName: "gearshape")
+                }
+                .accessibilityLabel("Setup")
+            }
+        }
+    }
+
+    /// Permissions, the bedroom beacon, and the rarely needed rest (Activity, privacy).
+    private var setupScreen: some View {
+        Form {
+            if !setupDone { setupSection }
+            beaconSection
+            standInSection
+            moreSection
+        }
+        .navigationTitle("Setup")
+        .brandForm()
+        .readableWidth()
     }
 
     // MARK: - Sections
@@ -305,30 +346,29 @@ struct ContentView: View {
         .brandRow()
     }
 
-    private var activitySection: some View {
+    /// On the main screen while setup is unfinished, so the status card's "Finish setup" has somewhere to go.
+    private var finishSetupSection: some View {
         Section {
-            if model.log.isEmpty {
-                Text("Nothing yet").foregroundStyle(.secondary)
+            NavigationLink(value: Screen.setup) {
+                Label(
+                    setupStepsLeft == 1 ? "1 setup step left" : "\(setupStepsLeft) setup steps left",
+                    systemImage: "wrench.and.screwdriver"
+                )
             }
-            ForEach(model.log.prefix(25)) { entry in
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(entry.message)
-                    Text(entry.date, format: .dateTime.weekday(.abbreviated).hour().minute())
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
-            }
-        } header: {
-            BrandHeader("Activity")
         }
         .brandRow()
     }
 
-    private var aboutSection: some View {
+    private var moreSection: some View {
         Section {
-            Link("Privacy policy", destination: AppLinks.privacyPolicy)
+            NavigationLink { ActivityView() } label: {
+                Label("Activity", systemImage: "clock.arrow.circlepath")
+            }
+            Link(destination: AppLinks.privacyPolicy) {
+                Label("Privacy policy", systemImage: "hand.raised")
+            }
         } header: {
-            BrandHeader("About")
+            BrandHeader("More")
         } footer: {
             Text("Everything Goodnight Phone stores stays on this iPhone. In an emergency, turn Goodnight Phone off in Settings → Screen Time → Apps with Screen Time Access to lift every block.")
         }
@@ -382,6 +422,41 @@ struct ContentView: View {
                 model.saveSchedule(schedule)
             }
         )
+    }
+}
+
+/// Screens pushed from the main screen.
+private enum Screen: Hashable {
+    case setup
+}
+
+// MARK: - Activity
+
+/// What Goodnight Phone did and when (blocks, room changes). Moved off the main screen.
+private struct ActivityView: View {
+    @EnvironmentObject private var model: AppModel
+
+    var body: some View {
+        Form {
+            Section {
+                if model.log.isEmpty {
+                    Text("Nothing yet").foregroundStyle(.secondary)
+                }
+                ForEach(model.log.prefix(50)) { entry in
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(entry.message)
+                        Text(entry.date, format: .dateTime.weekday(.abbreviated).hour().minute())
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                }
+            }
+            .brandRow()
+        }
+        .navigationTitle("Activity")
+        .navigationBarTitleDisplayMode(.inline)
+        .brandForm()
+        .readableWidth()
     }
 }
 
