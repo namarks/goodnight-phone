@@ -100,8 +100,15 @@ async function install() {
     await waitFor(() => isClosed || dialog._client !== undefined, 5000);
     if (!isClosed) dialog._closeDialog();
   } else if (installState() === "error") {
-    // Its error screen leads back to the menu, so close it and show our own tips instead.
-    outcome = "failed";
+    // Its error screen leads back to the menu, so close it and show our own tips instead, picked
+    // by what went wrong: only a board that didn't answer needs install mode.
+    const error = dialog._installState.details && dialog._installState.details.error;
+    outcome =
+      {
+        failed_initialize: "failed",
+        failed_firmware_download: "offline",
+        not_supported: "wrong-board",
+      }[error] || "interrupted";
     await sleep(300);
     if (!isClosed) dialog._closeDialog();
   }
