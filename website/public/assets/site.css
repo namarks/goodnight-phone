@@ -55,3 +55,4 @@ footer p:first-child{display:flex;flex-wrap:wrap;gap:8px 16px}
 @media (max-width:720px){.split.rev{grid-template-columns:1fr}.split.rev img{order:-1}}
 button.button{border:0;cursor:pointer;font:inherit;font-weight:700}
 .card > :first-child{margin-top:0}
+[hidden]{display:none !important}
