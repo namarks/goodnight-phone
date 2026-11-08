@@ -96,11 +96,6 @@ def coin(x, y, r):
             f'<circle cx="{x}" cy="{y}" r="{r*0.8}" fill="none" stroke="#9A9E95" stroke-width="2"/>')
 
 
-def tape(x, y, w, h, angle):
-    return (f'<rect x="{x - w/2}" y="{y - h/2}" width="{w}" height="{h}" rx="2" fill="{Y}" fill-opacity="0.92" '
-            f'stroke="{INK}" stroke-width="2" transform="rotate({angle} {x} {y})"/>')
-
-
 def badge(x, y, ok, r=19):
     if ok:
         mark = f'<path d="M{x - r*0.45},{y + r*0.02} l{r*0.32},{r*0.34} l{r*0.6},{-r*0.68}" fill="none" stroke="{G}" stroke-width="{r*0.28}" stroke-linecap="round" stroke-linejoin="round"/>'
@@ -172,8 +167,9 @@ def scene_under_bed():
 
 
 def scene_puck():
-    """The battery puck taped to the underside of the bed frame, big."""
-    p = puck(195, 203, 50) + tape(156, 176, 16, 66, -14) + tape(234, 176, 16, 66, 14)
+    """The battery puck stuck to the wall under the bed. The mounting strip behind it isn't drawn:
+    a pull tab read as a lollipop stick, and tape read as flimsy. The copy says what to use."""
+    p = puck(195, 262, 50)
     return frame(under_bed(p) + badge(40, 40, True))
 
 

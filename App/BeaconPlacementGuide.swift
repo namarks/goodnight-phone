@@ -33,8 +33,8 @@ struct BeaconPlacementGuide: View {
         ),
         Tip(
             art: "GuidePuck",
-            title: "Battery: tape it under the bed",
-            text: "Tape the puck to the underside of the bed frame. There's no cord to pull."
+            title: "Battery: stick it under the bed",
+            text: "Use a Command strip to stick the puck to the wall behind the bed or under the bed frame. There's no cord to pull, and it peels off cleanly when the battery needs changing."
         ),
         Tip(
             art: "GuideFloorPlan",
