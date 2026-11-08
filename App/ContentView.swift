@@ -656,9 +656,24 @@ private struct BeaconEditor: View {
 private struct HubSetupView: View {
     let isCurrent: Bool
     let onUse: () -> Void
+    @StateObject private var finder = HubFinder()
 
     var body: some View {
         Form {
+            // Coming back from the computer, this is the first thing on screen.
+            if finder.state == .found && !isCurrent {
+                Section {
+                    Button(action: onUse) {
+                        Label("Use this board", systemImage: "checkmark.circle.fill").bold()
+                    }
+                } header: {
+                    BrandHeader("Found your board")
+                } footer: {
+                    Text("If it's still plugged into the computer, move it to a charger by your bed first. After you tap Use this board, stand in the bedroom doorway and tap Set boundary here.")
+                }
+                .brandRow()
+            }
+
             Section {
                 Text("A thumbnail-sized Bluetooth board that stays plugged in by your bed as your bedroom hub. You set exactly where the bedroom ends by standing in the doorway, and walking out lifts the block within seconds. One board works for up to three phones, each with its own bedtime.")
             }
@@ -687,19 +702,49 @@ private struct HubSetupView: View {
             .brandRow()
 
             Section {
+                HubFinderRow(finder: finder, thing: "board")
                 Button(isCurrent ? "This is your bedroom beacon" : "Use this board", action: onUse)
                     .disabled(isCurrent)
             } header: {
                 BrandHeader("3. Plug it in by the bed")
             } footer: {
-                Text("Put it on the far side of the bed from the door. Then tap the button above, stand in the bedroom doorway and tap Set boundary here.")
+                Text("Put it on the far side of the bed from the door. Your iPhone finds it on its own once it's installed and plugged in. Then tap Use this board, stand in the bedroom doorway and tap Set boundary here.")
             }
             .brandRow()
         }
+        .animation(.default, value: finder.state)
         .navigationTitle("Seeed XIAO board")
         .brandForm()
         .readableWidth()
         .navigationBarTitleDisplayMode(.inline)
+        .onAppear { finder.start() }
+        .onDisappear { finder.stop() }
+    }
+}
+
+/// Whether the hub's setup screen can hear it yet.
+private struct HubFinderRow: View {
+    @ObservedObject var finder: HubFinder
+    /// "board" or "device".
+    let thing: String
+
+    var body: some View {
+        LabeledContent("Your \(thing)") {
+            switch finder.state {
+            case .idle, .searching:
+                HStack(spacing: 6) {
+                    Text("Looking…")
+                    ProgressView()
+                }
+            case .found:
+                Label("Found", systemImage: "checkmark.circle.fill")
+                    .foregroundStyle(Color.accentColor)
+            case .bluetoothOff:
+                Text("Turn on Bluetooth")
+            case .notAllowed:
+                Text("Allow Bluetooth in Settings")
+            }
+        }
     }
 }
 
@@ -781,6 +826,7 @@ private struct BlueCharmSetupView: View {
 private struct SpareDeviceSetupView: View {
     let isCurrent: Bool
     let onUse: () -> Void
+    @StateObject private var finder = HubFinder()
 
     var body: some View {
         Form {
@@ -794,6 +840,7 @@ private struct SpareDeviceSetupView: View {
             .brandRow()
 
             Section {
+                HubFinderRow(finder: finder, thing: "spare device")
                 Button(isCurrent ? "This is your bedroom beacon" : "Use the spare device", action: onUse)
                     .disabled(isCurrent)
             } header: {
@@ -807,6 +854,8 @@ private struct SpareDeviceSetupView: View {
         .brandForm()
         .readableWidth()
         .navigationBarTitleDisplayMode(.inline)
+        .onAppear { finder.start() }
+        .onDisappear { finder.stop() }
     }
 }
 
