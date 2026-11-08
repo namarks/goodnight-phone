@@ -1,0 +1,39 @@
+# Builds the bedroom hub firmware (hardware/esp32-hub.yaml) so a broken change is caught before
+# it reaches a board. The built image is kept as a workflow artifact for the website's install page.
+name: Hub firmware
+
+on:
+  pull_request:
+    paths: ["hardware/**", ".github/workflows/hub-firmware.yml"]
+  push:
+    branches: [main]
+    paths: ["hardware/**", ".github/workflows/hub-firmware.yml"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install ESPHome
+        run: pip install "esphome==2026.10.1"
+      - name: Check the config
+        run: esphome config hardware/esp32-hub.yaml
+      - name: Compile
+        run: esphome compile hardware/esp32-hub.yaml
+      - name: Collect the install image
+        run: |
+          image=$(find hardware/.esphome -name 'firmware.factory.bin' | head -1)
+          test -n "$image" || { echo "No factory image built"; exit 1; }
+          mkdir -p out && cp "$image" out/bedroom-hub.factory.bin
+          ls -l out
+      - uses: actions/upload-artifact@v4
+        with:
+          name: bedroom-hub-firmware
+          path: out/bedroom-hub.factory.bin

@@ -1,0 +1,1 @@
+ESP Web Tools 10.4.0 (https://github.com/esphome/esp-web-tools), dist/web from the npm package, unmodified. Apache-2.0, see LICENSE.txt. Served from our own origin because the site CSP only allows self-hosted scripts.
