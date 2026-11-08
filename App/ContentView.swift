@@ -258,6 +258,10 @@ struct ContentView: View {
             }
             Button(model.beacon == nil ? "Add beacon…" : "Change beacon…") { editingBeacon = true }
                 .disabled(model.isLocked)
+            // Read-only, so it stays open while apps are blocked.
+            NavigationLink { BeaconPlacementGuide() } label: {
+                Label("Where to put the beacon", systemImage: "lightbulb")
+            }
         } header: {
             BrandHeader("Bedroom beacon")
         } footer: {
@@ -584,6 +588,10 @@ private struct BeaconEditor: View {
                     } label: {
                         Label("Another iBeacon", systemImage: "number")
                     }
+
+                    NavigationLink { BeaconPlacementGuide() } label: {
+                        Label("Where to put it", systemImage: "lightbulb")
+                    }
                 } header: {
                     BrandHeader("Add a beacon")
                 } footer: {
@@ -592,7 +600,7 @@ private struct BeaconEditor: View {
                     case .connecting: Text("Connecting…")
                     case .writing: Text("Setting it up…")
                     case .failed(let message): Text(message).foregroundStyle(.red)
-                    case .idle: Text("Blue Charm: plug it into a USB charger by the bed. For the battery one, twist it open, hold the white button inside for 3 seconds until the light flashes red, and close it. Then hold your iPhone next to it and tap Set up.\n\nBedroom hub: a spare iPad or iPhone running Goodnight Phone (turn on Broadcast as bedroom beacon there), or a hub board. You set where the bedroom ends by standing in the doorway.")
+                    case .idle, .holding: Text("Blue Charm: plug it into a USB charger by the bed. For the battery one, twist it open, hold the white button inside for 3 seconds until the light flashes red, and close it. Then hold your iPhone next to it and tap Set up.\n\nBedroom hub: a spare iPad or iPhone running Goodnight Phone (turn on Broadcast as bedroom beacon there), or a hub board. You set where the bedroom ends by standing in the doorway.")
                     }
                 }
                 .brandRow()
@@ -715,14 +723,20 @@ private struct BlueCharmRange: View {
     let pairing: BlueCharmPairing
 
     private var steps: [Int] { BlueCharm.powerSteps }
-    private var index: Int { steps.firstIndex(of: pairing.txPower) ?? steps.firstIndex(of: BlueCharm.startingPower)! }
+    /// The step last tapped, even before the beacon has it, so each tap shows at once.
+    private var power: Int { blueCharm.targetPower ?? pairing.txPower }
+    private var index: Int { steps.firstIndex(of: power) ?? steps.firstIndex(of: BlueCharm.startingPower)! }
+    /// Busy with something other than a range change (setup), when the buttons wait.
+    private var otherJob: Bool { blueCharm.isBusy && blueCharm.targetPower == nil }
 
     var body: some View {
         LabeledContent("Range") {
-            if blueCharm.isBusy {
-                ProgressView()
-            } else {
+            HStack(spacing: 8) {
+                if blueCharm.targetPower != nil, blueCharm.phase != .holding {
+                    ProgressView()
+                }
                 Text("\(index + 1) of \(steps.count)")
+                    .monospacedDigit()
             }
         }
         HStack {
@@ -734,19 +748,14 @@ private struct BlueCharmRange: View {
         }
         // Borderless, or a tap anywhere in the row would press both buttons.
         .buttonStyle(.borderless)
-        .disabled((model.isLocked && !pairing.inTuningWindow()) || blueCharm.isBusy)
+        .disabled((model.isLocked && !pairing.inTuningWindow()) || otherJob)
         if case .failed(let message) = blueCharm.phase {
             Text(message).font(.caption).foregroundStyle(.red)
         }
     }
 
     private func step(_ delta: Int) {
-        let power = steps[index + delta]
-        Task {
-            if let updated = await blueCharm.setPower(power, for: pairing) {
-                model.saveBlueCharm(updated)
-            }
-        }
+        blueCharm.requestPower(steps[index + delta], for: pairing) { model.saveBlueCharm($0) }
     }
 }
 
