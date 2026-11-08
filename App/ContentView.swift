@@ -14,7 +14,8 @@ struct ContentView: View {
     @State private var showingPicker = false
     @State private var pickerSelection = FamilyActivitySelection()
     @State private var editingBeacon = false
-    @State private var path: [Screen] = []
+    /// Opens on Setup until a bedroom beacon is set; the main screen is one Back away.
+    @State private var path: [Screen] = Shared.beacon == nil ? [.setup] : []
 
     /// Keeps the status card current if bedtime starts while the app is open.
     private let ticker = Timer.publish(every: 30, on: .main, in: .common).autoconnect()
