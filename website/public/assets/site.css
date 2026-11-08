@@ -39,7 +39,7 @@ nav a:hover{color:var(--green)}
 .steps li{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:20px;counter-increment:s}
 .steps li::before{content:counter(s);display:inline-grid;place-items:center;width:32px;height:32px;border-radius:50%;background:var(--moon);color:#23302A;font-weight:800;margin-bottom:10px}
 .card{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:24px;margin:20px 0}
-.split{display:grid;grid-template-columns:.8fr 1.2fr;gap:32px;align-items:center;margin:32px 0}
+.split{display:grid;grid-template-columns:.8fr 1.2fr;gap:32px;align-items:center;margin-block:32px}
 .split img{border-radius:20px}
 .disclosure{font-size:.9rem;color:var(--muted);border-left:4px solid var(--moon);padding-left:12px}
 main{padding-bottom:48px}
