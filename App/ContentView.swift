@@ -94,20 +94,27 @@ struct ContentView: View {
     private var mainScreen: some View {
         Form {
             Section {
-                StatusCard(
-                    setupDone: setupDone,
-                    isBlocking: model.isBlocking,
-                    inRoom: model.inRoom,
-                    anyTime: !model.schedule.limitToHours,
-                    tonight: model.schedule.currentNight(),
-                    testEndsAt: model.testEndsAt
-                )
+                // Until setup is done the card itself says what's left and opens Setup.
+                Button {
+                    if !setupDone { path.append(.setup) }
+                } label: {
+                    StatusCard(
+                        setupDone: setupDone,
+                        setupStepsLeft: setupStepsLeft,
+                        isBlocking: model.isBlocking,
+                        inRoom: model.inRoom,
+                        anyTime: !model.schedule.limitToHours,
+                        tonight: model.schedule.currentNight(),
+                        testEndsAt: model.testEndsAt
+                    )
+                }
+                .buttonStyle(.plain)
+                .allowsHitTesting(!setupDone)
             }
             .listRowInsets(EdgeInsets())
             .listRowBackground(Color.clear)
 
             if broadcaster.isOn { broadcastingSection }
-            if !setupDone { finishSetupSection }
             appsSection
             hoursSection
             if model.screenTimeApproved && !model.selection.isEmptySelection { tryItSection }
@@ -185,7 +192,7 @@ struct ContentView: View {
                 ) { hub.calibrate() }
             }
         } header: {
-            BrandHeader("Setup")
+            BrandHeader("Checklist")
         } footer: {
             Text(usesStandIn
                  ? "Your phone stays connected to the spare device. During bedtime hours it checks the signal every 2 seconds, even when Goodnight Phone is closed. Nothing is blocked until the boundary is set."
@@ -347,19 +354,6 @@ struct ContentView: View {
         .brandRow()
     }
 
-    /// On the main screen while setup is unfinished, so the status card's "Finish setup" has somewhere to go.
-    private var finishSetupSection: some View {
-        Section {
-            NavigationLink(value: Screen.setup) {
-                Label(
-                    setupStepsLeft == 1 ? "1 setup step left" : "\(setupStepsLeft) setup steps left",
-                    systemImage: "wrench.and.screwdriver"
-                )
-            }
-        }
-        .brandRow()
-    }
-
     private var moreSection: some View {
         Section {
             NavigationLink { ActivityView() } label: {
@@ -465,6 +459,7 @@ private struct ActivityView: View {
 
 private struct StatusCard: View {
     let setupDone: Bool
+    let setupStepsLeft: Int
     let isBlocking: Bool
     let inRoom: Bool
     let anyTime: Bool
@@ -520,7 +515,10 @@ private struct StatusCard: View {
             return "Test block. They wake up at \(testEndsAt.formatted(date: .omitted, time: .shortened))."
         }
         if isBlocking { return "They wake up when you leave the room." }
-        if !setupDone { return "A few permissions and a beacon, then it runs on its own." }
+        if !setupDone {
+            let steps = setupStepsLeft == 1 ? "1 step left" : "\(setupStepsLeft) steps left"
+            return "\(steps), then it runs on its own. Tap to continue."
+        }
         if anyTime { return "Apps block whenever you walk in." }
         guard let tonight else {
             return inRoom ? "Tonight's a night off, so nothing's blocked." : "Tonight's a night off, so nothing will block."
