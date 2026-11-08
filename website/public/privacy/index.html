@@ -28,7 +28,7 @@
 <h2>What Goodnight Phone uses, and why</h2>
 <p><strong>Screen Time (Family Controls).</strong> You pick which apps, categories and websites to block with Apple's own picker. Apple gives Goodnight Phone opaque tokens for your choices, not the names of the apps, and Goodnight Phone never sees how you use them. The tokens are stored on your device so the block can be applied at bedtime.</p>
 <p><strong>Location.</strong> Goodnight Phone uses iOS beacon monitoring to notice when your iPhone is near your bedroom beacon. iOS reports only "near the beacon" or "not near it". Goodnight Phone doesn't read, store or send your GPS position or any map location.</p>
-<p><strong>Bluetooth.</strong> If you set up a Blue Charm beacon from the app, Goodnight Phone connects to it over Bluetooth to set its ID and range. If you use a spare iPad or iPhone instead of a beacon, Goodnight Phone uses Bluetooth between your own devices to tell whether you're in the bedroom. Nothing is sent anywhere else.</p>
+<p><strong>Bluetooth.</strong> If you use a bedroom hub (a XIAO board) or a spare iPad or iPhone, Goodnight Phone connects to it over Bluetooth to tell whether you're in the bedroom, and sends it your bedtime hours and time zone so it knows when to check. If you set up a Blue Charm beacon from the app, Goodnight Phone connects to it over Bluetooth to set its ID and range. Nothing is sent anywhere else.</p>
 <p><strong>Settings and activity log.</strong> Your bedtime hours, beacon ID and a short log of recent events (such as "Entered bedroom") are stored on your device, in storage shared only between Goodnight Phone and its own extensions. The log keeps the last 60 entries.</p>
 <h2>What leaves your device</h2>
 <p>Nothing. Goodnight Phone makes no network requests. If you've turned on sharing with app developers in iOS Settings, Apple may send crash reports to the developer. Those are covered by Apple's privacy policy, not handled by Goodnight Phone.</p>
@@ -44,7 +44,7 @@
 </main>
 <footer><div class="wrap">
 <p><a href="/beacon">Beacons</a><a href="/support">Help</a><a href="/privacy">Privacy</a><a href="mailto:support@marks-labs.com">support@marks-labs.com</a></p>
-<p>© 2026 Nicholas Marks. Apple, iPhone and Screen Time are trademarks of Apple Inc. Goodnight Phone isn’t affiliated with Apple or Blue Charm Beacons.</p>
+<p>© 2026 Nicholas Marks. Apple, iPhone and Screen Time are trademarks of Apple Inc. Goodnight Phone isn’t affiliated with Apple, Seeed Studio or Blue Charm Beacons.</p>
 </div></footer>
 </body>
 </html>
