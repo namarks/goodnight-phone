@@ -8,7 +8,7 @@
 <link rel="icon" href="/assets/app-icon.png">
 <link rel="apple-touch-icon" href="/assets/app-icon.png">
 <link rel="stylesheet" href="/assets/site.css">
-<script type="module" src="/assets/esp-web-tools/install-button.js"></script>
+<script type="module" src="/assets/hub-install.js"></script>
 </head>
 <body>
 <header class="site"><div class="wrap">
@@ -27,20 +27,43 @@
 <h2>Steps</h2>
 <ol>
 <li>Plug the XIAO into your computer with the USB-C cable.</li>
-<li>Click <strong>Install</strong> below, pick the board in the list that pops up (it’s usually called “USB JTAG/serial debug unit”), then confirm.</li>
-<li>Wait until it says the installation is complete, about a minute. Then unplug it.</li>
+<li>Click <strong>Install</strong>. Chrome shows your board in a small box: click it, then <strong>Connect</strong>.</li>
+<li>Wait about a minute until it says it’s installed. Then unplug it.</li>
 </ol>
 
-<p>
-<esp-web-install-button manifest="/hub/firmware/manifest.json">
-<button slot="activate" class="button" type="button">Install</button>
-<span slot="unsupported"><strong>This browser can’t install the hub.</strong> Open this page in Chrome or Edge on a Mac or PC.</span>
-<span slot="not-allowed"><strong>This page needs a secure connection.</strong> Open it at https://goodnightphone.marks-labs.com/hub/install.</span>
-</esp-web-install-button>
-</p>
-
-<h3>The board doesn’t show up in the list</h3>
-<p>Try another cable first: charge-only cables are common. If it still doesn’t appear, unplug the board, hold the small <strong>B</strong> (boot) button, plug it back in, let go, and click Install again.</p>
+<div id="hub-install">
+<p data-state="ready"><button class="button" type="button">Install</button></p>
+<div class="card" data-state="done" hidden>
+<p><strong>Installed.</strong> Unplug the hub and follow the steps below to put it by your bed.</p>
+<p><button class="button" type="button">Install again</button></p>
+</div>
+<div class="card" data-state="not-found" hidden>
+<p><strong>Your board didn’t show up?</strong> Try another USB-C cable first: many only charge. If it still isn’t listed, put the board in install mode: hold the tiny button marked <strong>B</strong> (next to the USB-C port), tap the one marked <strong>R</strong>, then let go of B.</p>
+<p><button class="button" type="button">Try again</button></p>
+</div>
+<div class="card" data-state="failed" hidden>
+<p><strong>The board didn’t respond.</strong> Put it in install mode, then try again: hold the tiny button marked <strong>B</strong> (next to the USB-C port), tap the one marked <strong>R</strong>, then let go of B.</p>
+<p><button class="button" type="button">Try again</button></p>
+</div>
+<div class="card" data-state="offline" hidden>
+<p><strong>The hub software didn’t download.</strong> Check your internet connection, then try again.</p>
+<p><button class="button" type="button">Try again</button></p>
+</div>
+<div class="card" data-state="wrong-board" hidden>
+<p><strong>This board isn’t a XIAO ESP32-C6.</strong> The hub only installs on that board. Check the name printed on it, or see <a href="/beacon">Choose a beacon</a>.</p>
+<p><button class="button" type="button">Try again</button></p>
+</div>
+<div class="card" data-state="interrupted" hidden>
+<p><strong>The install stopped partway.</strong> Plug the board straight into the computer (not through a hub), keep it plugged in, and try again. A different cable can help too.</p>
+<p><button class="button" type="button">Try again</button></p>
+</div>
+<div class="card" data-state="busy" hidden>
+<p><strong>Something else is using the board.</strong> Close any other app or browser tab that’s connected to it, then try again.</p>
+<p><button class="button" type="button">Try again</button></p>
+</div>
+<p data-state="unsupported" hidden><strong>This browser can’t install the hub.</strong> Open this page in Chrome or Edge on a Mac or PC.</p>
+<p data-state="not-allowed" hidden><strong>This page needs a secure connection.</strong> Open it at https://goodnightphone.marks-labs.com/hub/install.</p>
+</div>
 
 <h2>Then, by the bed</h2>
 <ol>
