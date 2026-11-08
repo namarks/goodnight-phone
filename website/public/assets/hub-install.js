@@ -64,8 +64,19 @@ async function install() {
   document.body.appendChild(dialog);
 
   // The manifest sets new_install_improv_wait_time to 0, so the dialog only loads the manifest.
-  await waitFor(() => dialog._state === "ERROR" || (dialog._manifest && dialog._client === null), 10000);
-  if (dialog._state === "ERROR" || !dialog._manifest) {
+  const loaded = await waitFor(
+    () => dialog._state === "ERROR" || (dialog._manifest && dialog._client === null),
+    30000,
+  );
+  if (!loaded) {
+    // Its Connecting screen has no close button, so give up on a download that hangs, close it
+    // and offer a retry. If the download finishes later, the removed dialog does nothing with it.
+    outcome = "offline";
+    dialog._closeDialog();
+    await closed;
+    return;
+  }
+  if (dialog._state === "ERROR") {
     // The dialog shows what went wrong and closes when the user is done with it.
     await closed;
     return;
