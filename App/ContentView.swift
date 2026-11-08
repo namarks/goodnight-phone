@@ -615,7 +615,7 @@ private struct BeaconEditor: View {
                 } header: {
                     BrandHeader("No beacon yet?")
                 } footer: {
-                    Text("The Blue Charm BC-U1 plugs into any USB charger, so there's no battery to run out, and Goodnight Phone sets it up for you. If there's no outlet by the bed, the Blue Charm BC05 is a small puck that runs for years on a coin cell, and Goodnight Phone sets it up the same way. If its battery dies, blocking stops until you replace it.\n\nAs an Amazon Associate, Goodnight Phone earns from qualifying purchases.")
+                    Text("The Blue Charm BC-U1 plugs into any USB charger, so there's no battery to run out, and Goodnight Phone sets it up for you. If there's no outlet by the bed, the Blue Charm BC05 is a small puck that runs for years on a coin cell, and Goodnight Phone sets it up the same way. If its battery dies, blocking stops until you replace it.")
                 }
                 .brandRow()
 
