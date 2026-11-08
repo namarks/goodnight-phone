@@ -4,10 +4,11 @@ import SwiftUI
 /// Read-only, so it stays open to read while apps are blocked. Art source: docs/art/guide-scenes.py.
 struct BeaconPlacementGuide: View {
     private struct Tip: Identifiable {
-        let art: String
+        /// nil for a text-only tip, so only the main ideas get a picture.
+        var art: String?
         let title: String
         let text: String
-        var id: String { art }
+        var id: String { title }
     }
 
     private let tips = [
@@ -27,7 +28,6 @@ struct BeaconPlacementGuide: View {
             text: "Use the outlet behind the headboard or under the bed. With the charger and beacon down there, getting to them means crawling under or pulling the bed out, and the signal still fills the room."
         ),
         Tip(
-            art: "GuideOutletCover",
             title: "Shut it in",
             text: "A childproof outlet box cover from a hardware store closes over the charger and the beacon together. Bluetooth goes right through the plastic, and sleepy fingers don't. A few strips of strong tape work too."
         ),
@@ -42,7 +42,6 @@ struct BeaconPlacementGuide: View {
             text: "Put it on the side of the room away from the door, not on the wall beside it, so the bedroom ends at the doorway. Then step out into the hallway with Goodnight Phone open. If Status still says “In the bedroom” after 30 seconds, tap Shorter."
         ),
         Tip(
-            art: "GuideHub",
             title: "Using a spare iPad or iPhone",
             text: "Stand it on a dresser with Goodnight Phone open and Broadcast on, plugged into an outlet that's awkward to reach. Then set the boundary standing in the bedroom doorway. A hub board can hide behind furniture the same way."
         ),
@@ -57,15 +56,17 @@ struct BeaconPlacementGuide: View {
 
                 ForEach(tips) { tip in
                     VStack(alignment: .leading, spacing: 10) {
-                        Image(tip.art)
-                            .resizable()
-                            .scaledToFit()
-                            .frame(maxWidth: 290)
-                            .clipShape(RoundedRectangle(cornerRadius: 28, style: .continuous))
-                            .overlay(RoundedRectangle(cornerRadius: 28, style: .continuous).strokeBorder(Brand.fixedInk, lineWidth: 3))
-                            .frame(maxWidth: .infinity)
-                            .accessibilityHidden(true)
-                            .padding(.bottom, 6)
+                        if let art = tip.art {
+                            Image(art)
+                                .resizable()
+                                .scaledToFit()
+                                .frame(maxWidth: 290)
+                                .clipShape(RoundedRectangle(cornerRadius: 28, style: .continuous))
+                                .overlay(RoundedRectangle(cornerRadius: 28, style: .continuous).strokeBorder(Brand.fixedInk, lineWidth: 3))
+                                .frame(maxWidth: .infinity)
+                                .accessibilityHidden(true)
+                                .padding(.bottom, 6)
+                        }
                         Text(tip.title)
                             .font(Brand.heading(26))
                             .foregroundStyle(Brand.green)
