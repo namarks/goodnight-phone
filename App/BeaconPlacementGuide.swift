@@ -15,42 +15,42 @@ struct BeaconPlacementGuide: View {
         Tip(
             art: "GuideHardware",
             title: "What you're placing",
-            text: "The USB beacon (Blue Charm BC-U1) is a tiny black plug, smaller than a quarter. It goes into any USB wall charger, so the charger is the part you'll see. The battery beacon (BC05) is a white puck about two inches across."
+            text: "The USB beacon is a tiny black plug, smaller than a quarter. It goes into a USB wall charger. The battery beacon is a white puck about 2 inches wide."
         ),
         Tip(
             art: "GuideNightstand",
             title: "Not on the nightstand",
-            text: "If you can reach it from bed, unplugging it at midnight takes two seconds. Skip the outlet by your pillow and the top of the nightstand."
+            text: "If you can reach it from bed, it's too easy to unplug."
         ),
         Tip(
             art: "GuideUnderBed",
-            title: "Low, behind the bed",
-            text: "Use the outlet behind the headboard or under the bed. With the charger and beacon down there, getting to them means crawling under or pulling the bed out, and the signal still fills the room."
+            title: "Down behind the bed",
+            text: "Plug the charger into an outlet behind or under the bed. To unplug it, you'd have to crawl under."
         ),
         Tip(
-            title: "Shut it in",
-            text: "A childproof outlet box cover from a hardware store closes over the charger and the beacon together. Bluetooth goes right through the plastic, and sleepy fingers don't. A few strips of strong tape work too."
+            title: "Make it even harder",
+            text: "Put a childproof outlet cover over the charger, or tape it in. Bluetooth works right through."
         ),
         Tip(
             art: "GuidePuck",
-            title: "Battery beacon? Tape it underneath",
-            text: "Stick the BC05 under the bed frame or inside the back of a drawer with two strips of strong tape. There's no cord to pull, and the coin cell lasts for years."
+            title: "Battery beacon? Tape it under the bed",
+            text: "Tape the puck to the bed frame. There's no cord to pull, and the battery lasts for years."
         ),
         Tip(
             art: "GuideFloorPlan",
             title: "Far from the door",
-            text: "Put it on the side of the room away from the door, not on the wall beside it, so the bedroom ends at the doorway. Then step out into the hallway with Goodnight Phone open. If Status still says “In the bedroom” after 30 seconds, tap Shorter."
+            text: "Keep it on the far side of the room from the door. Then walk into the hallway with Goodnight Phone open. If it still says “In the bedroom” after 30 seconds, tap Shorter."
         ),
         Tip(
-            title: "Using a spare iPad or iPhone",
-            text: "Stand it on a dresser with Goodnight Phone open and Broadcast on, plugged into an outlet that's awkward to reach. Then set the boundary standing in the bedroom doorway. A hub board can hide behind furniture the same way."
+            title: "Using a spare iPad or iPhone?",
+            text: "Keep it on a dresser, plugged in, with Broadcast on. Set the boundary standing in the bedroom doorway."
         ),
     ]
 
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 32) {
-                Text("Goodnight Phone only knows whether the beacon is near. Put it where switching it off takes real effort, so putting the phone down is the easy choice.")
+                Text("Put the beacon somewhere that's a hassle to reach, so switching it off at midnight takes real effort.")
                     .font(.system(.body, design: .rounded))
                     .foregroundStyle(Brand.ink.opacity(0.85))
 
