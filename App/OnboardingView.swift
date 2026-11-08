@@ -2,9 +2,10 @@ import SwiftUI
 
 enum AppLinks {
     static let privacyPolicy = URL(string: "https://goodnightphone.marks-labs.com/privacy")!
-    /// Blue Charm BC-U1: USB powered (no battery to die and silently end blocking), with
+    /// Blue Charm BC-U1, via the website's beacon page (which holds the tagged Amazon link, so the app
+    /// itself never links to Amazon; Associates links in apps need separate approval). USB powered (no battery to die and silently end blocking), with
     /// transmit power down to -40 dBm so the signal can stop at the bedroom door.
-    static let recommendedBeacon = URL(string: "https://www.amazon.com/dp/B09FYNK94F?tag=markslabs-20")!
+    static let recommendedBeacon = URL(string: "https://goodnightphone.marks-labs.com/beacon")!
     /// Blue Charm BC05: the battery option, a small sealed puck on one CR2477 coin cell (about four
     /// years at the one-second rate setup writes). Same KKM firmware, so the app sets it up too.
     static let batteryBeacon = URL(string: "https://bluecharmbeacons.com/product/bluetooth-ble-ibeacon-bc05-multibeacons-water-resistant-with-motion-sensor/")!
