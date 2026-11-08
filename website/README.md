@@ -7,7 +7,7 @@ Static site for `goodnightphone.marks-labs.com`: landing page, `/beacon` (which 
 From this directory (Node 22+):
 
 ```sh
-npm ci
+npm install
 npx wrangler deploy --config wrangler.jsonc --dry-run
 npm run deploy
 ```
@@ -20,4 +20,4 @@ Then check `/`, `/beacon`, `/support`, `/privacy`, an asset, and a missing URL.
 - Support email `support@marks-labs.com` is a Cloudflare Email Routing forward, not a mailbox.
 - Purchase links on `/beacon` may carry an Amazon Associates tag. Keep `rel="sponsored"` on them and the disclosure line at the bottom of that page (FTC).
 - Colors match `App/Assets.xcassets`; the heading font and illustrations come from the app (original art; never copy Goodnight Moon's illustrations, characters or wording). Font license: `public/assets/Fraunces-OFL.txt`.
-- The App Store button on the home page needs the real App Store URL in place of `__APP_STORE_URL__`.
+- App Store listing: https://apps.apple.com/us/app/goodnight-phone/id6828643945
