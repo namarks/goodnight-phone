@@ -12,9 +12,19 @@ struct BeaconPlacementGuide: View {
 
     private let tips = [
         Tip(
+            art: "GuideHardware",
+            title: "What you're placing",
+            text: "The USB beacon (Blue Charm BC-U1) is a tiny black plug, smaller than a quarter. It goes into any USB wall charger, so the charger is the part you'll see. The battery beacon (BC05) is a white puck about two inches across."
+        ),
+        Tip(
+            art: "GuideNightstand",
+            title: "Not on the nightstand",
+            text: "If you can reach it from bed, unplugging it at midnight takes two seconds. Skip the outlet by your pillow and the top of the nightstand."
+        ),
+        Tip(
             art: "GuideUnderBed",
             title: "Low, behind the bed",
-            text: "Plug the USB beacon into a charger at the outlet behind the headboard or under the bed. Getting to it means pulling the bed out, and the signal still fills the room."
+            text: "Use the outlet behind the headboard or under the bed. With the charger and beacon down there, getting to them means crawling under or pulling the bed out, and the signal still fills the room."
         ),
         Tip(
             art: "GuideOutletCover",
@@ -24,12 +34,12 @@ struct BeaconPlacementGuide: View {
         Tip(
             art: "GuidePuck",
             title: "Battery beacon? Tape it underneath",
-            text: "Stick the Blue Charm BC05 under the bed frame or to the back of a drawer with strong double-sided tape. There's no cord to pull, and the coin cell lasts for years."
+            text: "Stick the BC05 under the bed frame or inside the back of a drawer with two strips of strong tape. There's no cord to pull, and the coin cell lasts for years."
         ),
         Tip(
             art: "GuideFloorPlan",
             title: "Far from the door",
-            text: "Put it on the side of the room away from the door, and away from walls you share with rooms you use at night. Then step out into the hallway with Goodnight Phone open. If Status still says “In the bedroom” after 30 seconds, tap Shorter."
+            text: "Put it on the side of the room away from the door, not on the wall beside it, so the bedroom ends at the doorway. Then step out into the hallway with Goodnight Phone open. If Status still says “In the bedroom” after 30 seconds, tap Shorter."
         ),
         Tip(
             art: "GuideHub",
