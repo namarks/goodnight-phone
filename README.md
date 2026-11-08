@@ -25,8 +25,8 @@ A personal Brick Night: your chosen apps lock automatically when your iPhone is 
 Bluetooth goes through walls, so out of the box the zone may reach the hallway.
 
 1. Put the beacon on the far side of the nightstand, away from the door.
-2. With a Blue Charm set up from the app, use **Shorter** and **Longer** under Bedroom beacon instead of steps 2–4: it starts at −20 dBm, and each tap moves one power step (changes are locked while apps are blocked, except for the first 15 minutes after setup, so you can tune it from bed on the first night). With another beacon, in the vendor's app, lower **transmit power** (try about −12 dBm or lower) and set the advertising interval to around 500 ms.
-3. Walk out of the room and wait about 30 seconds. iOS waits a bit before deciding you've left. The app's Activity list should show "Left bedroom".
+2. With a Blue Charm set up from the app, use **Shorter** and **Longer** under Setup (the gear button) → Bedroom beacon instead of steps 2–4: it starts at −20 dBm, and each tap moves one power step (changes are locked while apps are blocked, except for the first 15 minutes after setup, so you can tune it from bed on the first night). With another beacon, in the vendor's app, lower **transmit power** (try about −12 dBm or lower) and set the advertising interval to around 500 ms.
+3. Walk out of the room and wait about 30 seconds. iOS waits a bit before deciding you've left. Setup → Activity in the app should show "Left bedroom".
 4. If it doesn't, lower the power one more step and try again. While Goodnight Phone is open, the **Signal** row under Bedroom beacon shows live signal strength (RSSI) and a rough distance, so you can watch it drop as you walk to the door.
 
 ## Battery
@@ -57,7 +57,7 @@ Bedtime starts/ends ──► DeviceActivity wakes the Monitor extension ──�
 | `Shared/BedtimeSchedule.swift` | Bedtime hours: usual hours, plus per-night hours or nights off. Unit-tested in `Tests/`. |
 | `Shared/BedtimeActivities.swift` | Registers a short daily DeviceActivity window at every start and end time across the week to wake the extension. iOS delivers these while the phone is in use, so if it's asleep on the nightstand at 9 PM, blocking turns on the next time you pick it up. |
 | `App/RoomMonitor.swift` | Watches the beacon with `CLMonitor`, and on iOS 18+ holds a `CLServiceSession` once "Always" is granted. It's started on every launch, which is how iOS delivers enter/exit events in the background. |
-| `App/ContentView.swift` | Status card, setup checklist, apps, hours, beacon, activity log. |
+| `App/ContentView.swift` | Main screen (status card, apps, hours, Try it now) and the Setup screen behind the gear button, where the app opens until a beacon is set (setup checklist, beacon, spare device, Activity, privacy). |
 | `App/HubMonitor.swift` | With a spare iPad or iPhone as the beacon: stays connected to it over Bluetooth (also with the app closed), reads the signal on each heartbeat, and decides in or out against the boundary you set at the bedroom door. |
 | `App/BlueCharm.swift` | Sets up the recommended Blue Charm beacons (BC-U1, BC05) over Bluetooth (its own UUID, starting power) and changes its range, using KKM's SDK vendored in `Vendor/kbeaconlib2`. Only during setup or a range change; blocking never depends on it. |
 | `App/BeaconSignal.swift` | The live Signal row for a real iBeacon: ranges the beacon while the app is open. Display only; blocking follows `RoomMonitor`. |
