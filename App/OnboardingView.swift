@@ -33,9 +33,9 @@ struct OnboardingView: View {
             text: "Goodnight Phone blocks the apps you choose while your iPhone is in the bedroom during bedtime hours. Walk out of the room and they unlock. There's nothing to tap."
         ),
         OnboardingPage(
-            art: "BeaconScene",
+            art: "HubScene",
             title: "Mark the bedroom",
-            text: "Put a small Bluetooth beacon by the bed (about $20 online), or use a spare iPad or iPhone running Goodnight Phone. Your iPhone notices when it's near."
+            text: "Plug a thumbnail-sized Bluetooth hub in by the bed (about $36 in parts, one tap to order), or use a spare iPad or iPhone running Goodnight Phone. Your iPhone notices when you walk in."
         ),
         OnboardingPage(
             art: "PrivacyScene",

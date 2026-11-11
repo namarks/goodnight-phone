@@ -76,6 +76,19 @@ def plate(cx, cy, w=58, h=96):
             + outlet(cx - 16, cy - h/2 + 8, 32, 36) + outlet(cx - 16, cy + h/2 - 44, 32, 36))
 
 
+def hub(x, y, s=1.0):
+    """The bedroom hub: a white outlet cube on a wall plate, with the thumbnail-sized XIAO board
+    sticking out flat from a side USB-C port on a small adapter. (x, y) is the cube's center."""
+    return (f'<g transform="translate({x},{y}) scale({s})">'
+            f'<rect x="-30" y="-36" width="60" height="72" rx="10" fill="{WHITE}" stroke="{INK}" stroke-width="{SW}"/>'
+            f'<rect x="-14" y="-24" width="3" height="11" fill="{INK}"/><rect x="11" y="-24" width="3" height="11" fill="{INK}"/>'
+            f'<rect x="-14" y="10" width="3" height="11" fill="{INK}"/><rect x="11" y="10" width="3" height="11" fill="{INK}"/>'
+            f'<rect x="30" y="-6" width="9" height="12" rx="2" fill="{METAL}" stroke="{INK}" stroke-width="2"/>'
+            f'<rect x="38" y="-13" width="30" height="26" rx="3" fill="{NIGHT}" stroke="{INK}" stroke-width="2.5"/>'
+            f'<rect x="47" y="-8" width="16" height="16" rx="1.5" fill="{METAL}" stroke="{INK}" stroke-width="1.5"/>'
+            f'<circle cx="42.5" cy="-8" r="1.6" fill="{Y}"/><circle cx="42.5" cy="8" r="1.6" fill="{Y}"/></g>')
+
+
 def puck(x, y, r=17):
     """The BC05: white puck, square QR label, twist notch near the bottom edge."""
     q = r * 0.62
@@ -191,7 +204,22 @@ def scene_plan():
     return frame(room + bed + walls + good + bad, floor=False)
 
 
+def scene_hub():
+    """Onboarding "Mark the bedroom": the phone walks in toward the bedroom hub, an outlet cube low
+    on the wall with the XIAO board on its side, and the hub's signal reaches out to it. Kept to
+    three things (phone, hub, signal) so it reads at a glance."""
+    wall = plate(292, 322, 70, 100) + hub(292, 322, 0.95)
+    waves = "".join(
+        f'<path d="M{262 - r:.0f},{318 - r*0.1:.0f} a{r},{r} 0 0 1 {r*0.5:.0f},{-r*0.82:.0f}" fill="none" '
+        f'stroke="{Y}" stroke-opacity="{op}" stroke-width="8" stroke-linecap="round"/>'
+        for r, op in [(34, 1), (68, 0.75), (102, 0.5)])
+    speed = "".join(f'<line x1="{x1}" y1="{y}" x2="{x2}" y2="{y}" stroke="{CREAM}" stroke-width="4" stroke-linecap="round"/>'
+                    for x1, x2, y in [(4, 30, 256), (0, 28, 280), (6, 30, 304)])
+    moon = f'<circle cx="318" cy="86" r="34" fill="{Y}"/><circle cx="334" cy="74" r="30" fill="{G}"/>'
+    return frame(moon + wall + waves + speed + phone(44, 196, 1.0, mood="sleep"))
+
 SCENES = {
+    "HubScene": scene_hub,
     "GuideHardware": scene_hardware,
     "GuideNightstand": scene_nightstand,
     "GuideUnderBed": scene_under_bed,
