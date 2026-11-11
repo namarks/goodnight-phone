@@ -760,7 +760,7 @@ private struct HubSetupView: View {
             } header: {
                 BrandHeader("1. Get the parts")
             } footer: {
-                Text("A Seeed XIAO ESP32-C6 and a small USB-C adapter, about $15 together, plus a USB-C charger or power strip by the bed.")
+                Text("A Seeed XIAO ESP32-C6, a small USB-C adapter and an outlet cube for by the bed, about $36 together. The page can add all three to your Amazon cart at once.")
             }
             .brandRow()
 
@@ -939,9 +939,9 @@ private struct NoBeaconView: View {
     var body: some View {
         Form {
             Section {
-                Text("A thumbnail-sized board that plugs into a USB charger by your bed. You set exactly where the bedroom ends by standing in the doorway, and walking out lifts the block within seconds. One board works for up to three phones.")
+                Text("A thumbnail-sized board that plugs into a small outlet cube by your bed. You set exactly where the bedroom ends by standing in the doorway, and walking out lifts the block within seconds. One board works for up to three phones.")
                 Link(destination: AppLinks.chooseHub) {
-                    Label("Get the parts (about $15)", systemImage: "cart")
+                    Label("Get the parts (about $36)", systemImage: "cart")
                 }
             } header: {
                 BrandHeader("We recommend: Seeed XIAO board")
