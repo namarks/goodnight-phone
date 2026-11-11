@@ -205,18 +205,41 @@ def scene_plan():
 
 
 def scene_hub():
-    """Onboarding "Mark the bedroom": the phone walks in toward the bedroom hub, an outlet cube low
-    on the wall with the XIAO board on its side, and the hub's signal reaches out to it. Kept to
-    three things (phone, hub, signal) so it reads at a glance."""
-    wall = plate(292, 322, 70, 100) + hub(292, 322, 0.95)
-    waves = "".join(
-        f'<path d="M{262 - r:.0f},{318 - r*0.1:.0f} a{r},{r} 0 0 1 {r*0.5:.0f},{-r*0.82:.0f}" fill="none" '
-        f'stroke="{Y}" stroke-opacity="{op}" stroke-width="8" stroke-linecap="round"/>'
-        for r, op in [(34, 1), (68, 0.75), (102, 0.5)])
-    speed = "".join(f'<line x1="{x1}" y1="{y}" x2="{x2}" y2="{y}" stroke="{CREAM}" stroke-width="4" stroke-linecap="round"/>'
-                    for x1, x2, y in [(4, 30, 256), (0, 28, 280), (6, 30, 304)])
-    moon = f'<circle cx="318" cy="86" r="34" fill="{Y}"/><circle cx="334" cy="74" r="30" fill="{G}"/>'
-    return frame(moon + wall + waves + speed + phone(44, 196, 1.0, mood="sleep"))
+    """Onboarding "Mark the bedroom": a close look at the bedside. The head of the bed is cropped
+    at the left, the hub (outlet cube with the XIAO on its side) is plugged in low on the wall,
+    its signal ripples out, and the phone sleeps on the nightstand. A night window sits top left."""
+    fy = 400
+    win = (f'<rect x="-20" y="40" width="130" height="130" rx="6" fill="{NIGHT}" stroke="{INK}" stroke-width="{SW}"/>'
+           f'<circle cx="76" cy="76" r="18" fill="{Y}"/><circle cx="85" cy="69" r="15.5" fill="{NIGHT}"/>'
+           f'<circle cx="18" cy="70" r="2.5" fill="{Y}"/><circle cx="30" cy="140" r="2" fill="{Y}"/>'
+           f'<line x1="45" y1="40" x2="45" y2="170" stroke="{INK}" stroke-width="{SW}"/>'
+           f'<line x1="-20" y1="105" x2="110" y2="105" stroke="{INK}" stroke-width="{SW}"/>')
+    hx, hy = 186, 336
+    rings = (f'<defs><clipPath id="wall"><rect x="0" y="0" width="390" height="{fy - 2}"/></clipPath></defs>'
+             f'<g clip-path="url(#wall)"><circle cx="{hx + 8}" cy="{hy}" r="40" fill="{Y}" fill-opacity="0.16"/>'
+             + "".join(f'<circle cx="{hx + 8}" cy="{hy}" r="{r}" fill="none" stroke="{Y}" stroke-opacity="{op}" '
+                       f'stroke-width="6" stroke-dasharray="{dash}" stroke-linecap="round"/>'
+                       for r, op, dash in [(54, 0.95, "32 16"), (88, 0.65, "42 22"), (124, 0.38, "52 28")])
+             + '</g>')
+    bed = (f'<rect x="132" y="196" width="22" height="{fy - 196}" rx="5" fill="{Y}" stroke="{INK}" stroke-width="{SW}"/>'
+           f'<rect x="-10" y="300" width="150" height="28" rx="5" fill="{Y}" stroke="{INK}" stroke-width="{SW}"/>'
+           f'<rect x="-10" y="258" width="142" height="42" rx="10" fill="{CREAM}" stroke="{INK}" stroke-width="{SW}"/>'
+           f'<ellipse cx="96" cy="248" rx="38" ry="16" fill="{CREAM}" stroke="{INK}" stroke-width="{SW}"/>'
+           f'<path d="M-10,240 h58 q12,0 12,12 v62 h-70 z" fill="{R}" stroke="{INK}" stroke-width="{SW}" stroke-linejoin="round"/>'
+           f'<path d="M-10,240 h58 q12,0 12,12 v4 h-70 z" fill="{CREAM}" stroke="{INK}" stroke-width="{SW}"/>'
+           f'<path d="M-6,278 h62 M-6,294 h62" stroke="{Y}" stroke-width="4" stroke-linecap="round"/>')
+    stand = (f'<rect x="236" y="280" width="148" height="20" rx="5" fill="{Y}" stroke="{INK}" stroke-width="{SW}"/>'
+             f'<rect x="244" y="300" width="132" height="62" fill="{Y}" stroke="{INK}" stroke-width="{SW}"/>'
+             f'<line x1="244" y1="331" x2="376" y2="331" stroke="{INK}" stroke-width="{SW}"/>'
+             f'<circle cx="310" cy="316" r="4.5" fill="{INK}"/><circle cx="310" cy="347" r="4.5" fill="{INK}"/>'
+             f'<rect x="250" y="362" width="14" height="{fy - 362}" fill="{Y}" stroke="{INK}" stroke-width="{SW}"/>'
+             f'<rect x="356" y="362" width="14" height="{fy - 362}" fill="{Y}" stroke="{INK}" stroke-width="{SW}"/>')
+    zz = (f'<text x="356" y="120" font-family="Georgia,serif" font-size="28" fill="{CREAM}">z</text>'
+          f'<text x="372" y="90" font-family="Georgia,serif" font-size="19" fill="{CREAM}">z</text>')
+    floor = (f'<rect x="0" y="{fy}" width="390" height="{470 - fy}" fill="{FLOOR}"/>'
+             f'<line x1="0" y1="{fy}" x2="390" y2="{fy}" stroke="{INK}" stroke-width="{SW}"/>')
+    return frame(floor + win + rings + bed + plate(hx + 4, hy, 40, 60) + hub(hx, hy, 0.62) + stand
+                 + phone(267, 128, 1.0, mood="sleep", legs=False) + zz, floor=False)
 
 SCENES = {
     "HubScene": scene_hub,
