@@ -754,13 +754,16 @@ private struct HubSetupView: View {
             .brandRow()
 
             Section {
-                Link(destination: AppLinks.chooseBeacon) {
-                    Label("See the parts", systemImage: "cart")
+                Link(destination: AppLinks.buyHubKit) {
+                    Label("Add the parts to your Amazon cart", systemImage: "cart")
+                }
+                Link(destination: AppLinks.chooseHub) {
+                    Label("What's in the kit", systemImage: "list.bullet")
                 }
             } header: {
                 BrandHeader("1. Get the parts")
             } footer: {
-                Text("A Seeed XIAO ESP32-C6, a small USB-C adapter and an outlet cube for by the bed, about $36 together. The page can add all three to your Amazon cart at once.")
+                Text("A Seeed XIAO ESP32-C6, a small USB-C adapter and an outlet cube for by the bed, about $36 together. \(AppLinks.amazonDisclosure)")
             }
             .brandRow()
 
@@ -933,15 +936,18 @@ private struct SpareDeviceSetupView: View {
     }
 }
 
-/// "I don't have one yet": which beacon to get. Buying happens on the website (it holds the
-/// Amazon links and disclosure), never in the app.
+/// "I don't have one yet": which beacon to get. The buy buttons open Amazon (tagged) through
+/// the website's /go redirects, in Safari or the Amazon app.
 private struct NoBeaconView: View {
     var body: some View {
         Form {
             Section {
                 Text("A thumbnail-sized board that plugs into a small outlet cube by your bed. You set exactly where the bedroom ends by standing in the doorway, and walking out lifts the block within seconds. One board works for up to three phones.")
+                Link(destination: AppLinks.buyHubKit) {
+                    Label("Add the parts to your Amazon cart (about $36)", systemImage: "cart")
+                }
                 Link(destination: AppLinks.chooseHub) {
-                    Label("Get the parts (about $36)", systemImage: "cart")
+                    Label("What's in the kit", systemImage: "list.bullet")
                 }
             } header: {
                 BrandHeader("We recommend: Seeed XIAO board")
@@ -952,11 +958,13 @@ private struct NoBeaconView: View {
 
             Section {
                 Text("A USB stick that plugs into any USB charger. Goodnight Phone sets it up itself, but it's less precise: iOS decides when you've left, which can take a minute or more.")
-                Link(destination: AppLinks.chooseBlueCharm) {
-                    Label("Get a Blue Charm (about $19)", systemImage: "cart")
+                Link(destination: AppLinks.buyBlueCharm) {
+                    Label("Get a Blue Charm on Amazon (about $19)", systemImage: "cart")
                 }
             } header: {
                 BrandHeader("No computer? Blue Charm BC-U1")
+            } footer: {
+                Text(AppLinks.amazonDisclosure)
             }
             .brandRow()
 

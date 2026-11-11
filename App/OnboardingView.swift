@@ -3,12 +3,18 @@ import SwiftUI
 enum AppLinks {
     static let privacyPolicy = URL(string: "https://goodnightphone.marks-labs.com/privacy")!
     /// The website's "Choose a beacon" page: the bedroom hub's parts first, then the Blue Charm
-    /// beacons. It holds the tagged Amazon links, so the app itself never links to Amazon
-    /// (Associates links in apps need separate approval).
+    /// beacons.
     static let chooseBeacon = URL(string: "https://goodnightphone.marks-labs.com/beacon")!
     /// The same page, scrolled to the bedroom hub's parts or to the Blue Charm.
     static let chooseHub = URL(string: "https://goodnightphone.marks-labs.com/beacon#hub")!
     static let chooseBlueCharm = URL(string: "https://goodnightphone.marks-labs.com/beacon#blue-charm")!
+    /// Website redirects (website/public/_redirects) straight to Amazon with the Associates tag:
+    /// the hub kit's three parts added to the cart at once, and the Blue Charm BC-U1. They live on
+    /// the website so a product swap needs no app update. Goodnight Phone is on the Associates
+    /// account's app list; links open in Safari or the Amazon app, never in a web view.
+    static let buyHubKit = URL(string: "https://goodnightphone.marks-labs.com/go/hub-kit")!
+    static let buyBlueCharm = URL(string: "https://goodnightphone.marks-labs.com/go/blue-charm")!
+    static let amazonDisclosure = "As an Amazon Associate, Goodnight Phone earns from qualifying purchases."
     /// One-click install of the bedroom hub firmware. Needs Chrome or Edge on a Mac or PC (Web
     /// Serial), so the app shares this link rather than opening it.
     static let hubInstall = URL(string: "https://goodnightphone.marks-labs.com/hub/install")!
