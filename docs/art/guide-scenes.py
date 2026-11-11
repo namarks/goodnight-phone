@@ -205,23 +205,18 @@ def scene_plan():
 
 
 def scene_hub():
-    """Onboarding "Mark the bedroom": the phone walks toward the bedroom hub on its outlet cube,
-    whose signal reaches out to it. Same layout as the original BeaconScene."""
-    rug = (f'<ellipse cx="96" cy="430" rx="80" ry="16" fill="{Y}" stroke="{INK}" stroke-width="{SW}"/>'
-           f'<ellipse cx="96" cy="430" rx="56" ry="10" fill="none" stroke="{R}" stroke-width="4"/>'
-           f'<ellipse cx="96" cy="430" rx="32" ry="5" fill="none" stroke="{G}" stroke-width="3.5"/>')
-    stand = (f'<rect x="268" y="300" width="104" height="92" rx="6" fill="{Y}" stroke="{INK}" stroke-width="{SW}"/>'
-             f'<line x1="278" y1="344" x2="362" y2="344" stroke="{INK}" stroke-width="2.5"/>'
-             f'<circle cx="320" cy="322" r="5" fill="{INK}"/><circle cx="320" cy="366" r="5" fill="{INK}"/>')
-    wall = plate(300, 214, 76, 118) + hub(288, 214, 1.1)
+    """Onboarding "Mark the bedroom": the phone walks in toward the bedroom hub, an outlet cube low
+    on the wall with the XIAO board on its side, and the hub's signal reaches out to it. Kept to
+    three things (phone, hub, signal) so it reads at a glance."""
+    wall = plate(292, 322, 70, 100) + hub(292, 322, 0.95)
     waves = "".join(
-        f'<path d="M{262 - r:.0f},{214 - r*0.15:.0f} a{r},{r} 0 0 1 {r*0.55:.0f},{-r*0.8:.0f}" fill="none" '
-        f'stroke="{Y}" stroke-opacity="{op}" stroke-width="7" stroke-linecap="round"/>'
-        for r, op in [(30, 1), (58, 0.8), (86, 0.55)])
+        f'<path d="M{262 - r:.0f},{318 - r*0.1:.0f} a{r},{r} 0 0 1 {r*0.5:.0f},{-r*0.82:.0f}" fill="none" '
+        f'stroke="{Y}" stroke-opacity="{op}" stroke-width="8" stroke-linecap="round"/>'
+        for r, op in [(34, 1), (68, 0.75), (102, 0.5)])
     speed = "".join(f'<line x1="{x1}" y1="{y}" x2="{x2}" y2="{y}" stroke="{CREAM}" stroke-width="4" stroke-linecap="round"/>'
-                    for x1, x2, y in [(16, 46, 256), (10, 44, 280), (20, 46, 304)])
-    return frame(rug + stand + wall + waves + speed + phone(60, 196, 0.95, mood="sleep"))
-
+                    for x1, x2, y in [(4, 30, 256), (0, 28, 280), (6, 30, 304)])
+    moon = f'<circle cx="318" cy="86" r="34" fill="{Y}"/><circle cx="334" cy="74" r="30" fill="{G}"/>'
+    return frame(moon + wall + waves + speed + phone(44, 196, 1.0, mood="sleep"))
 
 SCENES = {
     "HubScene": scene_hub,
