@@ -1,0 +1,4 @@
+# Short links the app opens, so a product swap only needs a website deploy (no App Review).
+# Each one goes straight to Amazon with the Associates tag (markslabs-20).
+/go/hub-kit https://www.amazon.com/gp/aws/cart/add.html?AssociateTag=markslabs-20&ASIN.1=B0D2NKVB34&Quantity.1=1&ASIN.2=B0BN3LKKPQ&Quantity.2=1&ASIN.3=B0GKT6QGSN&Quantity.3=1 302
+/go/blue-charm https://link.amazon/B05COYpdl 302
